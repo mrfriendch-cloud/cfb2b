@@ -1,0 +1,21 @@
+{
+  "name": "cf-b2b-website",
+  "version": "1.0.0",
+  "description": "B2B Product Exhibition Website on Cloudflare Workers",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "b2b",
+    "website"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.73.0"
+  }
+}
