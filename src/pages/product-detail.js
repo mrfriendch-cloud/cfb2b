@@ -3,28 +3,33 @@
  * Displays detailed information about a specific product
  */
 
-import { createLayout } from './layout';
+import { createLayout } from "./layout";
 
 export async function productDetailPage(request, env) {
   const url = new URL(request.url);
-  const productId = url.pathname.split('/').pop();
+  const productId = url.pathname.split("/").pop();
 
   // Load product info from database for SEO
-  let pageTitle = 'Product Details';
-  let metaDescription = 'View detailed product information';
+  let pageTitle = "Product Details";
+  let metaDescription = "View detailed product information";
 
   try {
-    const product = await env.DB.prepare('SELECT * FROM products WHERE id = ?').bind(productId).first();
+    const product = await env.DB.prepare("SELECT * FROM products WHERE id = ?")
+      .bind(productId)
+      .first();
     if (product) {
       pageTitle = product.name;
-      metaDescription = product.description || product.detailed_description || `${product.name} - High-quality product`;
+      metaDescription =
+        product.description ||
+        product.detailed_description ||
+        `${product.name} - High-quality product`;
       // Limit meta description to 160 characters for SEO
       if (metaDescription.length > 160) {
-        metaDescription = metaDescription.substring(0, 157) + '...';
+        metaDescription = metaDescription.substring(0, 157) + "...";
       }
     }
   } catch (error) {
-    console.error('Error loading product for SEO:', error);
+    console.error("Error loading product for SEO:", error);
   }
 
   const content = `
@@ -125,7 +130,7 @@ export async function productDetailPage(request, env) {
               <!-- Product Images -->
               <div>
                 <img src="\${product.image_url || 'https://via.placeholder.com/600x400?text=No+Image'}" alt="\${product.name}"
-                  style="width: 100%; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
+                  style="width: 100%; max-height: 500px; object-fit: contain; background: #f3f4f6; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
                   onerror="this.src='https://via.placeholder.com/600x400?text=Image+Not+Found'">
               </div>
 
@@ -264,12 +269,12 @@ export async function productDetailPage(request, env) {
     content,
     scripts,
     metaDescription,
-    false // Don't use title suffix for product pages, use product name only
+    false, // Don't use title suffix for product pages, use product name only
   );
 
   return new Response(html, {
     headers: {
-      'Content-Type': 'text/html;charset=UTF-8',
+      "Content-Type": "text/html;charset=UTF-8",
     },
   });
 }

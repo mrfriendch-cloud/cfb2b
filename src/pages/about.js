@@ -28,8 +28,21 @@ export async function aboutPage(env) {
     </section>
 
     <!-- Company Introduction -->
+    <style>
+      .about-intro-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        align-items: center;
+      }
+      @media (max-width: 768px) {
+        .about-intro-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
     <section class="container" style="margin-top: 3rem;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+      <div class="about-intro-grid">
         <div>
           <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--primary-color);">Who We Are</h2>
           <p style="color: var(--text-light); line-height: 1.8; margin-bottom: 1rem;">
@@ -188,20 +201,7 @@ export async function aboutPage(env) {
     </section>
   `;
 
-  const scripts = `
-    <script>
-      // Add responsive styles
-      const style = document.createElement('style');
-      style.textContent = \`
-        @media (max-width: 768px) {
-          section > div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      \`;
-      document.head.appendChild(style);
-    </script>
-  `;
+  const scripts = ``;
 
   const html = createLayout(
     `About Us - ${siteName}`,

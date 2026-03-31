@@ -66,8 +66,8 @@ CREATE INDEX IF NOT EXISTS idx_inquiries_product ON inquiries(product_id);
 
 INSERT OR IGNORE INTO admins (username, password_hash, email, role)
 VALUES
-('admin123', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin@example.com', 'admin'),
-('staff', '10176e7b7b24d317acfcf8d2064cfd2f24e154f7b5a96603077d5ef813d6a6b6', 'staff@example.com', 'admin');
+('admin123', '12d2c410aae289aa4a586e6851cc55bd7b8b47d470f5cceef5f08653af8cf62d', 'admin@example.com', 'admin'),
+('staff', '64b3d16d8723524ef0bfde63fbef11deadabbe34b47963d1c56e80feab497bce', 'staff@example.com', 'admin');
 
 -- Insert sample categories
 INSERT OR IGNORE INTO categories (id, name, description)

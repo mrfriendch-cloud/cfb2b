@@ -3,8 +3,16 @@
  * Provides common layout structure for all pages
  */
 
-export function createLayout(title, content, additionalScripts = '', metaDescription = 'B2B Product Exhibition - High-quality industrial products and solutions', useTitleSuffix = true) {
-  const pageTitle = useTitleSuffix ? `${title} - B2B Product Exhibition` : title;
+export function createLayout(
+  title,
+  content,
+  additionalScripts = "",
+  metaDescription = "B2B Product Exhibition - High-quality industrial products and solutions",
+  useTitleSuffix = true,
+) {
+  const pageTitle = useTitleSuffix
+    ? `${title} - B2B Product Exhibition`
+    : title;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,7 +177,8 @@ export function createLayout(title, content, additionalScripts = '', metaDescrip
     .card-image {
       width: 100%;
       height: 200px;
-      object-fit: cover;
+      object-fit: contain;
+      background: #f3f4f6;
     }
 
     .card-content {
@@ -205,12 +214,14 @@ export function createLayout(title, content, additionalScripts = '', metaDescrip
 
     /* Limit card max width when there are few items */
     .grid > .card {
-      max-width: 400px;
-      justify-self: start;
+      max-width: 450px;
+      justify-self: center;
+      width: 100%;
     }
 
     @media (min-width: 768px) {
       .grid > .card {
+        max-width: 400px;
         justify-self: stretch;
       }
     }
@@ -320,6 +331,10 @@ export function createLayout(title, content, additionalScripts = '', metaDescrip
       .grid-2,
       .grid-3 {
         grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 1rem;
       }
     }
 

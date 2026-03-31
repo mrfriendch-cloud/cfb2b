@@ -399,19 +399,101 @@ export async function adminDashboard(env) {
       margin-top: 0.5rem;
     }
 
+    .mobile-menu-btn {
+      display: none;
+      background: var(--primary-color);
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+
     @media (max-width: 768px) {
+      .admin-layout {
+        flex-direction: column;
+      }
       .admin-sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+      }
+      .admin-sidebar.active {
+        transform: translateX(0);
       }
       .admin-content {
         margin-left: 0;
+        width: 100%;
       }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .sidebar-overlay.active {
+        display: block;
+      }
+      .admin-header {
+        padding: 1rem;
+        margin: -2rem -2rem 2rem -2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      /* Mobile table styles */
+      .table-container {
+        overflow-x: auto;
+      }
+      .table {
+        font-size: 0.85rem;
+      }
+      .table th,
+      .table td {
+        padding: 0.75rem 0.5rem;
+      }
+      /* Hide non-essential columns on mobile */
+      .table th:nth-child(3),
+      .table td:nth-child(3),
+      .table th:nth-child(6),
+      .table td:nth-child(6),
+      .table th:nth-child(7),
+      .table td:nth-child(7) {
+        display: none;
+      }
+      /* Adjust button sizes on mobile */
+      .table .btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+        margin-right: 0.25rem;
+      }
+      /* Hide heading on mobile */
+      .products-header h2 {
+        display: none;
+      }
+    }
     }
   </style>
 </head>
 <body>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <div class="admin-layout">
     <!-- Sidebar -->
     <aside class="admin-sidebar">
@@ -431,12 +513,15 @@ export async function adminDashboard(env) {
     <!-- Main Content -->
     <main class="admin-content">
       <div class="admin-header">
-        <div>
-          <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Dashboard</h1>
-          <p style="color: var(--text-light); font-size: 0.9rem;">
-            Welcome back, <span id="admin-username">Admin</span>
-            <span id="admin-role-indicator" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; background: var(--primary-color); color: white; border-radius: 0.25rem; font-size: 0.75rem;">Loading...</span>
-          </p>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button class="mobile-menu-btn" id="admin-menu-toggle">☰ Menu</button>
+          <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Dashboard</h1>
+            <p style="color: var(--text-light); font-size: 0.9rem;">
+              Welcome back, <span id="admin-username">Admin</span>
+              <span id="admin-role-indicator" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; background: var(--primary-color); color: white; border-radius: 0.25rem; font-size: 0.75rem;">Loading...</span>
+            </p>
+          </div>
         </div>
         <div style="display: flex; gap: 1rem;">
           <a href="/" target="_blank" class="btn btn-primary" style="text-decoration: none; display: flex; align-items: center; ">
@@ -503,11 +588,12 @@ export async function adminDashboard(env) {
             </tbody>
           </table>
         </div>
+        <div id="categories-pagination-container"></div>
       </div>
 
       <!-- Products Tab -->
       <div id="products-tab" class="tab-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div class="products-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <h2 style="font-size: 1.25rem; color: var(--text-dark);">Manage Products</h2>
           <div style="display: flex; gap: 1rem; align-items: center;">
             <select id="product-category-filter" class="form-select" style="width: 200px;" onchange="loadProducts()">
@@ -519,6 +605,7 @@ export async function adminDashboard(env) {
         <div class="table-container">
           <div id="products-list">Loading...</div>
         </div>
+        <div id="products-pagination-container"></div>
       </div>
 
       <!-- Inquiries Tab -->
@@ -733,21 +820,32 @@ export async function adminDashboard(env) {
 
     // Mobile menu toggle
     document.addEventListener('DOMContentLoaded', function() {
-      const menuToggle = document.querySelector('.menu-toggle');
-      const navMenu = document.querySelector('.nav-menu');
+      const adminMenuToggle = document.getElementById('admin-menu-toggle');
+      const adminSidebar = document.querySelector('.admin-sidebar');
+      const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-      if (menuToggle && navMenu) {
-        menuToggle.addEventListener('click', function() {
-          navMenu.classList.toggle('active');
-        });
+      function toggleAdminMenu() {
+        if(adminSidebar) adminSidebar.classList.toggle('active');
+        if(sidebarOverlay) sidebarOverlay.classList.toggle('active');
+      }
 
-        // Close menu when clicking outside
-        document.addEventListener('click', function(event) {
-          if (!menuToggle.contains(event.target) && !navMenu.contains(event.target)) {
-            navMenu.classList.remove('active');
+      if (adminMenuToggle) {
+        adminMenuToggle.addEventListener('click', toggleAdminMenu);
+      }
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', toggleAdminMenu);
+      }
+
+      // Hide menu when a nav link is clicked on mobile
+      const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 768) {
+             if(adminSidebar) adminSidebar.classList.remove('active');
+             if(sidebarOverlay) sidebarOverlay.classList.remove('active');
           }
         });
-      }
+      });
 
       // Set active nav link based on current page
       const currentPath = window.location.pathname;
@@ -1004,9 +1102,49 @@ export async function adminDashboard(env) {
 
     let categories = [];
     let products = [];
+    
+    // Pagination state
+    let categoriesPage = 1;
+    let productsPage = 1;
+    const itemsPerPage = 5;
+
+    // Pagination helper function
+    function renderPagination(currentPage, totalItems, containerId, onPageChange) {
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      if (totalPages <= 1) return; // No pagination needed
+      
+      let paginationHtml = '<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; flex-wrap: wrap;">';
+      
+      // Previous button
+      if (currentPage > 1) {
+        paginationHtml += '<button onclick="' + onPageChange + '(' + (currentPage - 1) + ')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">← Previous</button>';
+      }
+      
+      // Page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+          paginationHtml += '<button style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 600;">' + i + '</button>';
+        } else {
+          paginationHtml += '<button onclick="' + onPageChange + '(' + i + ')" style="padding: 0.5rem 1rem; background: #e5e7eb; color: var(--text-dark); border: none; border-radius: 0.375rem; cursor: pointer;">' + i + '</button>';
+        }
+      }
+      
+      // Next button
+      if (currentPage < totalPages) {
+        paginationHtml += '<button onclick="' + onPageChange + '(' + (currentPage + 1) + ')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">Next →</button>';
+      }
+      
+      paginationHtml += '</div>';
+      
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = paginationHtml;
+      }
+    }
 
     // Load categories
-    async function loadCategories() {
+    async function loadCategories(page = 1) {
+      categoriesPage = page;
       const tbody = document.getElementById('categories-tbody');
       tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Loading categories...</td></tr>';
 
@@ -1016,10 +1154,16 @@ export async function adminDashboard(env) {
         
         if (categories.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No categories found.</td></tr>';
+          document.getElementById('categories-pagination-container').innerHTML = '';
           return;
         }
 
-        tbody.innerHTML = categories.map(cat => \`
+        // Calculate pagination
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedCategories = categories.slice(startIndex, endIndex);
+
+        tbody.innerHTML = paginatedCategories.map(cat => \`
           <tr>
             <td>
               \${cat.image_url 
@@ -1037,6 +1181,13 @@ export async function adminDashboard(env) {
             </td>
           </tr>
         \`).join('');
+
+        // Add pagination if needed
+        if (categories.length > itemsPerPage) {
+          renderPagination(page, categories.length, 'categories-pagination-container', 'loadCategories');
+        } else {
+          document.getElementById('categories-pagination-container').innerHTML = '';
+        }
       } catch (error) {
         tbody.innerHTML = \`<tr><td colspan="4" style="text-align: center; color: red;">Error loading categories: \${error.message}</td></tr>\`;
         showNotification('Failed to load categories', 'error');
@@ -1266,7 +1417,8 @@ export async function adminDashboard(env) {
     }
 
     // Load Products
-    async function loadProducts() {
+    async function loadProducts(page = 1) {
+      productsPage = page;
       const listDiv = document.getElementById('products-list');
       listDiv.innerHTML = '<div style="padding: 2rem; text-align: center;">Loading products...</div>';
 
@@ -1290,6 +1442,11 @@ export async function adminDashboard(env) {
             return;
           }
 
+          // Calculate pagination
+          const startIndex = (page - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
           let html = \`
             <table class="table">
               <thead>
@@ -1307,7 +1464,7 @@ export async function adminDashboard(env) {
               <tbody>
           \`;
           
-          html += filteredProducts.map(product => \`
+          html += paginatedProducts.map(product => \`
             <tr>
               <td>
                 \${product.image_url 
@@ -1332,7 +1489,15 @@ export async function adminDashboard(env) {
               </tbody>
             </table>
           \`;
+          
           listDiv.innerHTML = html;
+          
+          // Render pagination if needed
+          if (filteredProducts.length > itemsPerPage) {
+            renderPagination(page, filteredProducts.length, 'products-pagination-container', 'loadProducts');
+          } else {
+            document.getElementById('products-pagination-container').innerHTML = '';
+          }
         }
       } catch (error) {
         console.error('Error loading products:', error);
@@ -1684,7 +1849,7 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
 
   return new Response(html, {
     headers: {
-      'Content-Type': 'text/html;charset=UTF-8',
+      "Content-Type": "text/html;charset=UTF-8",
     },
   });
 }

@@ -28,8 +28,20 @@ export async function contactPage(env) {
     </section>
 
     <!-- Contact Section -->
+    <style>
+      .contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+      }
+      @media (max-width: 768px) {
+        .contact-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
     <section class="container" style="margin-top: 3rem; margin-bottom: 3rem;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+      <div class="contact-grid">
         <!-- Contact Information -->
         <div>
           <h2 style="font-size: 1.75rem; margin-bottom: 1.5rem; color: var(--primary-color);">Get In Touch</h2>
@@ -228,17 +240,6 @@ export async function contactPage(env) {
 
       // Load contact info on page load
       loadContactInfo();
-
-      // Add responsive styles
-      const style = document.createElement('style');
-      style.textContent = \`
-        @media (max-width: 768px) {
-          section > div > div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      \`;
-      document.head.appendChild(style);
     </script>
   `;
 
