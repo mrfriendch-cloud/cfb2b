@@ -83,19 +83,7 @@ async function uploadImage(request, env, corsHeaders) {
       throw new Error(`ImageKit upload failed: ${ikError.message}`);
     }
 
-    // 2. Upload to R2 (Backup)
-    try {
-      if (env.IMAGES) {
-        await env.IMAGES.put(key, file.stream(), {
-          httpMetadata: {
-            contentType: file.type,
-          },
-        });
-      }
-    } catch (r2Error) {
-      console.error('R2 backup upload error:', r2Error);
-      // Don't fail the whole request if only backup fails
-    }
+      // R2 backup upload removed (ImageKit only)
 
     return new Response(JSON.stringify({
       success: true,
@@ -119,38 +107,4 @@ async function uploadImage(request, env, corsHeaders) {
   }
 }
 
-// Get image from R2 (Legacy support)
-async function getImageUrl(key, env, corsHeaders) {
-  try {
-    if (!env.IMAGES) {
-      return new Response('R2 storage not configured', {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
 
-    const object = await env.IMAGES.get(key);
-
-    if (!object) {
-      return new Response('Image not found', {
-        status: 404,
-        headers: corsHeaders,
-      });
-    }
-
-    const headers = {
-      ...corsHeaders,
-      'Content-Type': object.httpMetadata.contentType || 'image/jpeg',
-      'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
-      'ETag': object.etag,
-    };
-
-    return new Response(object.body, { headers });
-  } catch (error) {
-    console.error('Get image error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-}

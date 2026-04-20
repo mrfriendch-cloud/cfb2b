@@ -3,7 +3,7 @@
  * Serves CSS, JS, and image files from the public directory
  */
 
-// In-memory storage for static files (for production, consider using KV or R2)
+// In-memory storage for static files (for production, consider using KV)
 const staticFiles = new Map();
 
 // Helper function to get content type
@@ -28,8 +28,8 @@ export async function handleStaticAssets(request, defaultContentType) {
   const path = url.pathname;
 
   // For now, return a placeholder response
-  // In production, you would read files from KV storage or R2
-  return new Response('Static file serving will be implemented with KV or R2', {
+  // In production, you would read files from KV storage
+  return new Response('Static file serving will be implemented with KV', {
     status: 200,
     headers: {
       'Content-Type': defaultContentType || getContentType(path),

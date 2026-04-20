@@ -136,9 +136,9 @@ export async function homePage(env) {
         const endIndex = startIndex + featuredItemsPerPage;
         const paginatedProducts = allFeaturedProducts.slice(startIndex, endIndex);
 
-        container.innerHTML = paginatedProducts.map(product => `
+        container.innerHTML = paginatedProducts.map(product => \`
           <div class="card">
-            <img src="${getImageKitUrl(product.image_url, 'w-400,h-300,cm-pad_resize,bg-F3F3F6') || '/images/placeholder.jpg'}" alt="${product.name}" class="card-image">
+            <img src="\${getImageKitUrl(product.image_url, 'w-400,h-300,cm-pad_resize,bg-F3F3F6') || '/images/placeholder.jpg'}" alt="\${product.name}" class="card-image">
             <div class="card-content">
               <h3 class="card-title">\${product.name}</h3>
               <p class="card-description">\${product.description || 'No description available'}</p>

@@ -172,10 +172,10 @@ export async function productsPage(env) {
         const endIndex = startIndex + itemsPerPage;
         const paginatedProducts = products.slice(startIndex, endIndex);
 
-        container.innerHTML = paginatedProducts.map(product => `
+        container.innerHTML = paginatedProducts.map(product => \`
           <div class="card">
-            <img src="${getImageKitUrl(product.image_url, 'w-400,h-300,cm-pad_resize,bg-F3F3F6') || 'https://via.placeholder.com/400x300?text=No+Image'}" 
-                 alt="${product.name}" 
+            <img src="\${getImageKitUrl(product.image_url, 'w-400,h-300,cm-pad_resize,bg-F3F3F6') || 'https://via.placeholder.com/400x300?text=No+Image'}" 
+                 alt="\${product.name}" 
                  class="card-image" 
                  onerror="this.src='https://via.placeholder.com/400x300?text=Image+Not+Found'">
             <div class="card-content">
