@@ -506,6 +506,7 @@ export async function adminDashboard(env) {
         <li><a href="#" data-tab="products">📦 Products</a></li>
         <li><a href="#" data-tab="inquiries">💬 Inquiries</a></li>
         <li><a href="#" data-tab="settings">⚙️ Settings</a></li>
+        <li><a href="#" data-tab="livechat" id="livechat-nav">💬 Live Chat <span id="chat-badge" style="display:none; background:#ef4444; color:white; border-radius:9999px; padding:0.1rem 0.45rem; font-size:0.7rem; margin-left:0.25rem;">0</span></a></li>
         <li><a href="#" id="logout-btn">🚪 Logout</a></li>
       </ul>
     </aside>
@@ -685,6 +686,61 @@ export async function adminDashboard(env) {
           </form>
         </div>
       </div>
+
+      <!-- Live Chat Tab -->
+      <div id="livechat-tab" class="tab-content">
+        <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text-dark);">Live Chat</h2>
+        <div id="livechat-grid" style="display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; height: calc(100vh - 220px);">
+          <style>
+            @media (max-width: 768px) {
+              #livechat-grid {
+                grid-template-columns: 1fr !important;
+                grid-template-rows: 300px 1fr;
+                height: auto !important;
+              }
+              #chat-reply-panel {
+                min-height: 400px;
+              }
+            }
+          </style>
+
+          <!-- Sessions List -->
+          <div style="background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;">
+            <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; font-size: 0.95rem;">Conversations</span>
+              <div style="display: flex; gap: 0.5rem;">
+                <button onclick="loadChatSessions('open')" id="chat-filter-open" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Open</button>
+                <button onclick="loadChatSessions('closed')" id="chat-filter-closed" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: #e5e7eb; color: var(--text-dark);">Closed</button>
+              </div>
+            </div>
+            <div id="chat-sessions-list" style="flex: 1; overflow-y: auto; padding: 0.5rem;">
+              <p style="text-align: center; color: var(--text-light); padding: 2rem; font-size: 0.9rem;">Loading sessions...</p>
+            </div>
+          </div>
+
+          <!-- Reply Panel -->
+          <div id="chat-reply-panel" style="background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;">
+            <div id="chat-reply-header" style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: var(--text-light); font-size: 0.95rem;">Select a conversation</span>
+            </div>
+            <div id="chat-reply-messages" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; background: #f9fafb;">
+              <p style="text-align: center; color: var(--text-light); margin: auto; font-size: 0.9rem;">No conversation selected</p>
+            </div>
+            <div id="chat-reply-input-area" style="padding: 1rem; border-top: 1px solid var(--border-color); display: none;">
+              <input type="text" id="admin-reply-input" placeholder="Type a reply..." class="form-input"
+                     style="width: 100%; margin-bottom: 0.5rem; display: block;"
+                     onkeypress="if(event.key==='Enter') sendAdminReply()">
+              <div style="display: flex; gap: 0.5rem;">
+                <button onclick="sendAdminReply()" class="btn btn-primary" style="flex: 1;">Send Reply</button>
+                <button onclick="closeCurrentSession()" class="btn" style="background: #e5e7eb; color: var(--text-dark); flex: 1;">Close Chat</button>
+                <button onclick="deleteCurrentSession()" class="btn" style="background: #fee2e2; color: #dc2626;">🗑</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1107,6 +1163,8 @@ export async function adminDashboard(env) {
           loadInquiries();
         } else if (tabName === 'settings') {
           loadSettings();
+        } else if (tabName === 'livechat') {
+          startChatSessionPolling();
         }
       });
     });
@@ -1828,7 +1886,8 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
     window.loadSettings = loadSettings;
 
     // Handle Image Migration
-    document.getElementById('trigger-migration-btn').addEventListener('click', async function() {
+    const migrationBtn = document.getElementById('trigger-migration-btn');
+    if (migrationBtn) migrationBtn.addEventListener('click', async function() {
       if (!confirm('Are you sure you want to start the image migration? This process will move all images from R2 to ImageKit and cannot be easily undone.')) {
         return;
       }
@@ -1895,6 +1954,311 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
         console.error('Error saving settings:', error);
         showNotification('Error saving settings', 'error');
       }
+    });
+
+    // ==========================================
+    // LIVE CHAT MANAGEMENT
+    // ==========================================
+
+    let chatSessionsInterval = null;
+    let chatMessagesInterval = null;
+    let currentChatSessionId = null;
+    let lastChatMessageId = 0;
+    let currentChatFilter = 'open';
+
+    function startChatSessionPolling() {
+      loadChatSessions(currentChatFilter);
+      clearInterval(chatSessionsInterval);
+      chatSessionsInterval = setInterval(() => {
+        loadChatSessions(currentChatFilter, true);
+      }, 5000);
+    }
+
+    function stopChatPolling() {
+      clearInterval(chatSessionsInterval);
+      clearInterval(chatMessagesInterval);
+      chatSessionsInterval = null;
+      chatMessagesInterval = null;
+    }
+
+    async function loadChatSessions(status = 'open', silent = false) {
+      currentChatFilter = status;
+
+      // Update filter button styles
+      const openBtn = document.getElementById('chat-filter-open');
+      const closedBtn = document.getElementById('chat-filter-closed');
+      if (openBtn && closedBtn) {
+        if (status === 'open') {
+          openBtn.className = 'btn btn-primary';
+          openBtn.style.cssText = 'padding: 0.25rem 0.75rem; font-size: 0.8rem;';
+          closedBtn.className = 'btn';
+          closedBtn.style.cssText = 'padding: 0.25rem 0.75rem; font-size: 0.8rem; background: #e5e7eb; color: var(--text-dark);';
+        } else {
+          closedBtn.className = 'btn btn-primary';
+          closedBtn.style.cssText = 'padding: 0.25rem 0.75rem; font-size: 0.8rem;';
+          openBtn.className = 'btn';
+          openBtn.style.cssText = 'padding: 0.25rem 0.75rem; font-size: 0.8rem; background: #e5e7eb; color: var(--text-dark);';
+        }
+      }
+
+      const list = document.getElementById('chat-sessions-list');
+
+      try {
+        const currentToken = localStorage.getItem('admin_token');
+        const response = await fetch(\`/api/chat/sessions?status=\${status}\`, {
+          headers: { 'Authorization': \`Bearer \${currentToken}\` }
+        });
+        const data = await response.json();
+
+        if (!list) return;
+
+        if (!data.success) {
+          if (!silent) {
+            list.innerHTML = \`<p style="text-align: center; color: #ef4444; padding: 1rem; font-size: 0.85rem;">Error: \${data.error || 'Failed to load'}</p>\`;
+          }
+          return;
+        }
+
+        const sessions = data.data || [];
+
+        // Update badge
+        const badge = document.getElementById('chat-badge');
+        if (badge) {
+          const unread = sessions.filter(s => s.last_sender_type === 'visitor').length;
+          if (unread > 0 && status === 'open') {
+            badge.textContent = unread;
+            badge.style.display = 'inline';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+
+        if (sessions.length === 0) {
+          list.innerHTML = \`<p style="text-align: center; color: var(--text-light); padding: 2rem; font-size: 0.9rem;">No \${status} conversations</p>\`;
+          return;
+        }
+
+        list.innerHTML = sessions.map(s => {
+          const isActive = s.session_id === currentChatSessionId;
+          const hasUnread = s.last_sender_type === 'visitor';
+          const time = s.last_message_at ? new Date(s.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          return \`<div onclick="openChatSession('\${s.session_id}', '\${(s.visitor_name || '').replace(/'/g, "\\\\'")}', '\${s.status}')"
+            style="padding: 0.75rem; border-radius: 0.375rem; cursor: pointer; margin-bottom: 0.25rem;
+                   background: \${isActive ? '#eff6ff' : 'white'};
+                   border: 1px solid \${isActive ? 'var(--primary-color)' : 'var(--border-color)'};
+                   transition: background 0.15s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+              <span style="font-weight: \${hasUnread ? '700' : '500'}; font-size: 0.9rem; color: var(--text-dark);">
+                \${hasUnread ? '🔵 ' : ''}\${s.visitor_name || 'Visitor'}
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-light);">\${time}</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-light); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;">
+              \${s.last_message ? (s.last_sender_type === 'admin' ? '↩ ' : '') + s.last_message.slice(0, 60) : 'No messages yet'}
+            </p>
+            <p style="font-size: 0.75rem; color: #9ca3af; margin: 0.25rem 0 0;">
+              \${s.page_url || ''} · \${s.total_messages || 0} msg
+            </p>
+          </div>\`;
+        }).join('');
+      } catch (err) {
+        if (!silent) {
+          if (list) list.innerHTML = \`<p style="text-align: center; color: #ef4444; padding: 1rem; font-size: 0.85rem;">Error: \${err.message}</p>\`;
+        }
+      }
+    }
+
+    async function openChatSession(sessionId, visitorName, status) {
+      currentChatSessionId = sessionId;
+      lastChatMessageId = 0;
+
+      // Update header
+      const header = document.getElementById('chat-reply-header');
+      if (header) {
+        header.innerHTML = \`
+          <div>
+            <span style="font-weight: 600; font-size: 0.95rem;">\${visitorName}</span>
+            <span style="margin-left: 0.5rem; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 9999px;
+              background: \${status === 'open' ? '#dcfce7' : '#f3f4f6'};
+              color: \${status === 'open' ? '#15803d' : '#6b7280'};">\${status}</span>
+          </div>
+          <button onclick="deleteCurrentSession()" class="btn" style="background: #fee2e2; color: #dc2626; padding: 0.3rem 0.75rem; font-size: 0.8rem;">🗑 Delete</button>
+        \`;
+      }
+
+      // Show/hide input area based on status
+      const inputArea = document.getElementById('chat-reply-input-area');
+      if (inputArea) inputArea.style.display = status === 'open' ? 'block' : 'none';
+
+      // Clear messages
+      const msgArea = document.getElementById('chat-reply-messages');
+      if (msgArea) msgArea.innerHTML = '<p style="text-align:center; color: var(--text-light); margin: auto;">Loading...</p>';
+
+      // Load messages
+      await fetchChatMessages();
+
+      // Start polling
+      clearInterval(chatMessagesInterval);
+      chatMessagesInterval = setInterval(fetchChatMessages, 3000);
+
+      // Re-render sessions to highlight active
+      loadChatSessions(currentChatFilter, true);
+    }
+
+    async function fetchChatMessages() {
+      if (!currentChatSessionId) return;
+      try {
+        const response = await fetch(\`/api/chat/messages?session_id=\${currentChatSessionId}&after=\${lastChatMessageId}\`, {
+          headers: { 'Authorization': \`Bearer \${token}\` }
+        });
+        const data = await response.json();
+        if (!data.success) return;
+
+        const messages = data.data || [];
+        if (messages.length === 0) {
+          const msgArea = document.getElementById('chat-reply-messages');
+          if (msgArea && lastChatMessageId === 0) {
+            msgArea.innerHTML = '<p style="text-align:center; color: var(--text-light); margin: auto; font-size: 0.9rem;">No messages yet</p>';
+          }
+          return;
+        }
+
+        lastChatMessageId = messages[messages.length - 1].id;
+
+        const msgArea = document.getElementById('chat-reply-messages');
+        if (!msgArea) return;
+
+        // Clear placeholder
+        if (msgArea.querySelector('p')) msgArea.innerHTML = '';
+
+        messages.forEach(msg => {
+          const isAdmin = msg.sender_type === 'admin';
+          const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const div = document.createElement('div');
+          div.style.cssText = \`display: flex; flex-direction: column; align-items: \${isAdmin ? 'flex-end' : 'flex-start'};\`;
+          div.innerHTML = \`
+            <div style="max-width: 75%; padding: 0.6rem 0.9rem; border-radius: \${isAdmin ? '1rem 1rem 0.25rem 1rem' : '1rem 1rem 1rem 0.25rem'};
+              background: \${isAdmin ? 'var(--primary-color)' : 'white'};
+              color: \${isAdmin ? 'white' : 'var(--text-dark)'};
+              box-shadow: 0 1px 2px rgba(0,0,0,0.08); font-size: 0.9rem; line-height: 1.4;">
+              \${msg.message}
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-light); margin-top: 0.2rem; padding: 0 0.25rem;">
+              \${isAdmin ? 'You' : msg.sender_name} · \${time}
+            </span>
+          \`;
+          msgArea.appendChild(div);
+        });
+
+        msgArea.scrollTop = msgArea.scrollHeight;
+      } catch (err) {
+        console.error('Error fetching chat messages:', err);
+      }
+    }
+
+    async function sendAdminReply() {
+      const input = document.getElementById('admin-reply-input');
+      const message = input ? input.value.trim() : '';
+      if (!message || !currentChatSessionId) return;
+
+      input.value = '';
+      input.disabled = true;
+
+      try {
+        const response = await fetch('/api/chat/message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${token}\`
+          },
+          body: JSON.stringify({
+            session_id: currentChatSessionId,
+            sender_type: 'admin',
+            sender_name: 'Support',
+            message
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          await fetchChatMessages();
+        } else {
+          showNotification(data.error || 'Failed to send reply', 'error');
+          input.value = message;
+        }
+      } catch (err) {
+        showNotification('Error sending reply', 'error');
+        input.value = message;
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function closeCurrentSession() {
+      if (!currentChatSessionId) return;
+      if (!confirm('Close this chat session?')) return;
+
+      try {
+        const response = await fetch('/api/chat/session/close', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${token}\`
+          },
+          body: JSON.stringify({ session_id: currentChatSessionId })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showNotification('Session closed', 'success');
+          clearInterval(chatMessagesInterval);
+          currentChatSessionId = null;
+          document.getElementById('chat-reply-header').innerHTML = '<span style="font-weight: 600; color: var(--text-light); font-size: 0.95rem;">Select a conversation</span>';
+          document.getElementById('chat-reply-messages').innerHTML = '<p style="text-align: center; color: var(--text-light); margin: auto; font-size: 0.9rem;">No conversation selected</p>';
+          document.getElementById('chat-reply-input-area').style.display = 'none';
+          loadChatSessions('open');
+        }
+      } catch (err) {
+        showNotification('Error closing session', 'error');
+      }
+    }
+
+    async function deleteCurrentSession() {
+      if (!currentChatSessionId) return;
+      if (!confirm('Permanently delete this conversation and all its messages? This cannot be undone.')) return;
+
+      try {
+        const response = await fetch('/api/chat/session', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${localStorage.getItem('admin_token')}\`
+          },
+          body: JSON.stringify({ session_id: currentChatSessionId })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showNotification('Session deleted', 'success');
+          clearInterval(chatMessagesInterval);
+          currentChatSessionId = null;
+          document.getElementById('chat-reply-header').innerHTML = '<span style="font-weight: 600; color: var(--text-light); font-size: 0.95rem;">Select a conversation</span>';
+          document.getElementById('chat-reply-messages').innerHTML = '<p style="text-align: center; color: var(--text-light); margin: auto; font-size: 0.9rem;">No conversation selected</p>';
+          document.getElementById('chat-reply-input-area').style.display = 'none';
+          loadChatSessions(currentChatFilter);
+        } else {
+          showNotification(data.error || 'Failed to delete session', 'error');
+        }
+      } catch (err) {
+        showNotification('Error deleting session', 'error');
+      }
+    }
+
+    // Stop chat polling when switching away from livechat tab
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.getAttribute('data-tab') !== 'livechat') {
+          stopChatPolling();
+        }
+      });
     });
 
     // Initialize dashboard

@@ -581,6 +581,444 @@ export function createLayout(
     window.showNotification = showNotification;
   </script>
   ${additionalScripts}
+
+  <!-- Chat Widget -->
+  <style>
+    #chat-bubble {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #chat-bubble:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(37,99,235,0.5);
+    }
+    #chat-unread-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #ef4444;
+      color: white;
+      border-radius: 9999px;
+      width: 20px;
+      height: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+    }
+    #chat-panel {
+      position: fixed;
+      bottom: 92px;
+      right: 24px;
+      z-index: 9998;
+      width: 350px;
+      height: 500px;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: chatSlideUp 0.2s ease-out;
+    }
+    #chat-panel.open {
+      display: flex;
+    }
+    @keyframes chatSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #chat-panel-header {
+      background: var(--primary-color);
+      color: white;
+      padding: 0.9rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #chat-panel-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    #chat-panel-header p {
+      margin: 0.1rem 0 0;
+      font-size: 0.78rem;
+      opacity: 0.85;
+    }
+    #chat-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 0.25rem;
+      opacity: 0.85;
+    }
+    #chat-close-btn:hover { opacity: 1; }
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background: #f9fafb;
+    }
+    .chat-msg-row {
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-msg-row.visitor { align-items: flex-end; }
+    .chat-msg-row.admin   { align-items: flex-start; }
+    .chat-msg-bubble {
+      max-width: 80%;
+      padding: 0.55rem 0.85rem;
+      border-radius: 1rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .chat-msg-row.visitor .chat-msg-bubble {
+      background: var(--primary-color);
+      color: white;
+      border-bottom-right-radius: 0.25rem;
+    }
+    .chat-msg-row.admin .chat-msg-bubble {
+      background: white;
+      color: var(--text-dark);
+      border-bottom-left-radius: 0.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .chat-msg-time {
+      font-size: 0.7rem;
+      color: var(--text-light);
+      margin-top: 0.15rem;
+      padding: 0 0.2rem;
+    }
+    #chat-input-area {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      background: white;
+    }
+    #chat-message-input {
+      flex: 1;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #chat-message-input:focus { border-color: var(--primary-color); }
+    #chat-send-btn {
+      padding: 0.6rem 1rem;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    #chat-send-btn:hover { background: var(--secondary-color); }
+    #chat-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    @media (max-width: 480px) {
+      #chat-panel {
+        width: calc(100vw - 16px);
+        right: 8px;
+        bottom: 84px;
+        height: 420px;
+      }
+      #chat-bubble { bottom: 16px; right: 16px; }
+    }
+  </style>
+
+  <!-- Chat Bubble Button -->
+  <button id="chat-bubble" aria-label="Open chat" onclick="toggleChatPanel()">
+    💬
+    <span id="chat-unread-badge"></span>
+  </button>
+
+  <!-- Chat Panel -->
+  <div id="chat-panel" role="dialog" aria-label="Live chat">
+    <div id="chat-panel-header">
+      <div>
+        <h3>Chat with us</h3>
+        <p id="chat-status-text">We typically reply within minutes</p>
+      </div>
+      <button id="chat-close-btn" onclick="toggleChatPanel()" aria-label="Close chat">✕</button>
+    </div>
+
+    <!-- Name entry screen removed — session auto-starts on open -->
+
+    <!-- Messages screen -->
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <input id="chat-message-input" type="text" placeholder="Type a message..."
+             maxlength="2000" onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button id="chat-send-btn" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const POLL_INTERVAL = 3000;
+      let chatSessionId = sessionStorage.getItem('chat_session_id');
+      let chatVisitorName = sessionStorage.getItem('chat_visitor_name');
+      let lastMsgId = parseInt(sessionStorage.getItem('chat_last_msg_id') || '0', 10);
+      let pollTimer = null;
+      let unreadCount = 0;
+      let panelOpen = false;
+      let sessionReady = false;
+
+      function generateId() {
+        return crypto.randomUUID
+          ? crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+              const r = Math.random() * 16 | 0;
+              return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+      }
+
+      function generateVisitorName() {
+        return 'Visitor #' + Math.random().toString(36).slice(2, 6).toUpperCase();
+      }
+
+      // Restore session if exists
+      window.addEventListener('DOMContentLoaded', function() {
+        if (chatSessionId && chatVisitorName) {
+          sessionReady = true;
+          loadChatHistory();
+        }
+      });
+
+      window.toggleChatPanel = function() {
+        panelOpen = !panelOpen;
+        const panel = document.getElementById('chat-panel');
+        panel.classList.toggle('open', panelOpen);
+        document.getElementById('chat-bubble').innerHTML = panelOpen
+          ? '✕<span id="chat-unread-badge" style="display:none"></span>'
+          : '💬<span id="chat-unread-badge" style="display:none"></span>';
+
+        if (panelOpen) {
+          clearUnreadBadge();
+          if (!sessionReady) {
+            initSession();
+          } else {
+            startPolling();
+            scrollChatToBottom();
+            setTimeout(() => document.getElementById('chat-message-input').focus(), 100);
+          }
+        } else {
+          stopPolling();
+        }
+      };
+
+      async function initSession() {
+        if (sessionReady) return;
+
+        // Show a subtle loading state
+        const msgArea = document.getElementById('chat-messages');
+        msgArea.innerHTML = \`<div style="text-align:center; color: var(--text-light); padding: 2rem; font-size: 0.88rem;">Connecting...</div>\`;
+
+        try {
+          chatSessionId = generateId();
+          chatVisitorName = generateVisitorName();
+
+          const res = await fetch('/api/chat/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: chatSessionId,
+              visitor_name: chatVisitorName,
+              page_url: window.location.pathname
+            })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error || 'Failed to connect');
+
+          sessionStorage.setItem('chat_session_id', chatSessionId);
+          sessionStorage.setItem('chat_visitor_name', chatVisitorName);
+          sessionStorage.setItem('chat_last_msg_id', '0');
+          lastMsgId = 0;
+          sessionReady = true;
+
+          msgArea.innerHTML = '';
+          document.getElementById('chat-status-text').textContent = 'How can we help you today?';
+          startPolling();
+          setTimeout(() => document.getElementById('chat-message-input').focus(), 100);
+        } catch (err) {
+          const msgArea = document.getElementById('chat-messages');
+          msgArea.innerHTML = \`<div style="text-align:center; color:#ef4444; padding: 2rem; font-size: 0.88rem;">Connection failed. Please try again.</div>\`;
+          console.error('Chat session error:', err);
+        }
+      }
+
+      window.sendChatMessage = async function() {
+        const input = document.getElementById('chat-message-input');
+        const sendBtn = document.getElementById('chat-send-btn');
+        const message = input.value.trim();
+        if (!message || !chatSessionId) return;
+
+        input.value = '';
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        // Optimistic render
+        appendChatMessage({ sender_type: 'visitor', sender_name: chatVisitorName, message, created_at: new Date().toISOString() });
+
+        try {
+          const res = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: chatSessionId,
+              sender_type: 'visitor',
+              sender_name: chatVisitorName,
+              message
+            })
+          });
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error);
+        } catch (err) {
+          console.error('Send error:', err);
+        } finally {
+          input.disabled = false;
+          sendBtn.disabled = false;
+          input.focus();
+        }
+      };
+
+      async function loadChatHistory() {
+        if (!chatSessionId) return;
+        try {
+          const res = await fetch(\`/api/chat/messages?session_id=\${chatSessionId}&after=0\`);
+          const data = await res.json();
+          if (!data.success) return;
+          const msgs = data.data || [];
+          const container = document.getElementById('chat-messages');
+          container.innerHTML = '';
+          msgs.forEach(appendChatMessage);
+          if (msgs.length > 0) {
+            lastMsgId = msgs[msgs.length - 1].id;
+            sessionStorage.setItem('chat_last_msg_id', lastMsgId);
+          }
+          scrollChatToBottom();
+        } catch (err) {
+          console.error('Load history error:', err);
+        }
+      }
+
+      async function pollMessages() {
+        if (!chatSessionId) return;
+        try {
+          const res = await fetch(\`/api/chat/messages?session_id=\${chatSessionId}&after=\${lastMsgId}\`);
+          const data = await res.json();
+          if (!data.success) return;
+          const msgs = data.data || [];
+          if (msgs.length === 0) return;
+
+          msgs.forEach(msg => {
+            appendChatMessage(msg);
+            // Show badge for admin replies when panel is closed
+            if (msg.sender_type === 'admin' && !panelOpen) {
+              unreadCount++;
+              showUnreadBadge(unreadCount);
+            }
+          });
+          lastMsgId = msgs[msgs.length - 1].id;
+          sessionStorage.setItem('chat_last_msg_id', lastMsgId);
+          if (panelOpen) scrollChatToBottom();
+        } catch (err) {
+          console.error('Poll error:', err);
+        }
+      }
+
+      function startPolling() {
+        stopPolling();
+        pollTimer = setInterval(pollMessages, POLL_INTERVAL);
+      }
+
+      function stopPolling() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      }
+
+      function appendChatMessage(msg) {
+        const container = document.getElementById('chat-messages');
+        if (!container) return;
+        const isVisitor = msg.sender_type === 'visitor';
+        const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const row = document.createElement('div');
+        row.className = \`chat-msg-row \${isVisitor ? 'visitor' : 'admin'}\`;
+        row.innerHTML = \`
+          <div class="chat-msg-bubble">\${escapeHtml(msg.message)}</div>
+          <span class="chat-msg-time">\${isVisitor ? 'You' : msg.sender_name} · \${time}</span>
+        \`;
+        container.appendChild(row);
+      }
+
+      function scrollChatToBottom() {
+        const c = document.getElementById('chat-messages');
+        if (c) c.scrollTop = c.scrollHeight;
+      }
+
+      function showUnreadBadge(count) {
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) {
+          badge.textContent = count;
+          badge.style.display = 'flex';
+        }
+      }
+
+      function clearUnreadBadge() {
+        unreadCount = 0;
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) badge.style.display = 'none';
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      // Keep polling when tab is visible, pause when hidden
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          stopPolling();
+        } else if (panelOpen && chatSessionId) {
+          startPolling();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>`;
 }
