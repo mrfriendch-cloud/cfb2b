@@ -678,6 +678,21 @@ export async function adminDashboard(env) {
               <input type="url" id="settings-twitter" name="twitter" class="form-input" placeholder="https://twitter.com/yourcompany">
             </div>
 
+            <h3 style="font-size: 1.1rem; margin: 2rem 0 1rem; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+              System Maintenance
+            </h3>
+
+            <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+              <h4 style="color: #9a3412; margin-bottom: 0.5rem;">Image Migration</h4>
+              <p style="color: #c2410c; font-size: 0.9rem; margin-bottom: 1rem;">
+                Move all existing images from Cloudflare R2 to ImageKit.io. This process will update your product and category image URLs.
+              </p>
+              <div id="migration-status" style="margin-bottom: 1rem; display: none; padding: 1rem; background: white; border-radius: 0.25rem; border: 1px solid #ffedd5; font-size: 0.9rem;"></div>
+              <button type="button" id="trigger-migration-btn" class="btn" style="background: #f97316; color: white;">
+                🚀 Start Image Migration
+              </button>
+            </div>
+
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
               <button type="submit" id="save-settings-btn" class="btn btn-primary" style="margin-right: 1rem;">Save Settings</button>
               <button type="button" class="btn btn-secondary" onclick="loadSettings()">Reset</button>
@@ -1826,6 +1841,47 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
     }
 
     window.loadSettings = loadSettings;
+
+    // Handle Image Migration
+    document.getElementById('trigger-migration-btn').addEventListener('click', async function() {
+      if (!confirm('Are you sure you want to start the image migration? This process will move all images from R2 to ImageKit and cannot be easily undone.')) {
+        return;
+      }
+
+      const btn = this;
+      const statusDiv = document.getElementById('migration-status');
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ Migrating...';
+      statusDiv.style.display = 'block';
+      statusDiv.innerHTML = 'Starting migration process...';
+      statusDiv.style.color = 'var(--text-dark)';
+
+      try {
+        const response = await API.post('/migrate', {});
+        if (response.success) {
+          const res = response.results;
+          statusDiv.innerHTML = `
+            <strong>Migration Complete!</strong><br>
+            Categories: \${res.categories.migrated} migrated, \${res.categories.skipped} skipped, \${res.categories.failed} failed.<br>
+            Products: \${res.products.migrated} migrated, \${res.products.skipped} skipped, \${res.products.failed} failed.<br>
+            \${res.errors.length > 0 ? \`<span style="color: #ef4444;">Errors: \${res.errors.length} (see console)</span>\` : ''}
+          `;
+          statusDiv.style.color = '#15803d';
+          showNotification('Image migration completed successfully', 'success');
+        } else {
+          throw new Error(response.error || 'Migration failed');
+        }
+      } catch (error) {
+        console.error('Migration error:', error);
+        statusDiv.innerHTML = \`<strong>Error:</strong> \${error.message}\`;
+        statusDiv.style.color = '#ef4444';
+        showNotification('Image migration failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Restart Image Migration';
+      }
+    });
 
     // Handle settings form submission
     document.getElementById('settings-form').addEventListener('submit', async function(e) {

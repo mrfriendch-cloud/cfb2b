@@ -26,6 +26,12 @@ export async function handleApiRequest(request, env) {
       return handleSettings(request, env, corsHeaders);
     }
 
+    // Migration API
+    if (path.startsWith('/api/migrate')) {
+      const { handleMigrate } = await import('./handlers/migrate');
+      return handleMigrate(request, env, corsHeaders);
+    }
+
     // Upload API
     if (path.startsWith('/api/upload')) {
       const { handleUpload } = await import('./handlers/upload');
