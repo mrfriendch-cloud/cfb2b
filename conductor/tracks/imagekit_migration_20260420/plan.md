@@ -21,5 +21,5 @@
 ## Phase 4: Migration and Verification
 - [x] Task: Perform a dry run of image migration from R2 to ImageKit.io.
 - [x] Task: Final migration of existing images.
-- [ ] Task: Conduct end-to-end verification of the image workflow.
-- [ ] Task: Conductor - User Manual Verification 'Migration and Verification' (Protocol in workflow.md)
+- [x] Task: Conduct end-to-end verification of the image workflow.
+- [x] Task: Conductor - User Manual Verification 'Migration and Verification' (Protocol in workflow.md)
