@@ -1,7 +1,9 @@
 /**
  * Upload API Handler
- * Handles file uploads to Cloudflare R2
+ * Handles file uploads to ImageKit.io (with R2 as backup)
  */
+
+import { uploadToImageKit } from '../../utils/imagekit';
 
 export async function handleUpload(request, env, corsHeaders) {
   const url = new URL(request.url);
@@ -13,7 +15,7 @@ export async function handleUpload(request, env, corsHeaders) {
     return uploadImage(request, env, corsHeaders);
   }
 
-  // GET /api/upload/image/:key - Get image URL
+  // GET /api/upload/image/:key - Get image URL (Legacy support for R2)
   // key can be multi-part like products/123-abc.jpg
   if (method === 'GET' && pathParts[2] === 'image' && pathParts[3]) {
     // Reconstruct the full key from remaining path parts
@@ -27,7 +29,7 @@ export async function handleUpload(request, env, corsHeaders) {
   });
 }
 
-// Upload image to R2
+// Upload image to ImageKit.io
 async function uploadImage(request, env, corsHeaders) {
   try {
     // TODO: Add authentication check for admin only
@@ -64,27 +66,43 @@ async function uploadImage(request, env, corsHeaders) {
       });
     }
 
-    // Generate unique filename
+    // Generate unique filename for R2 backup
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(7);
-    const extension = file.name.split('.').pop();
+    const extension = file.name.split('.').pop() || 'jpg';
     const key = `products/${timestamp}-${randomStr}.${extension}`;
 
-    // Upload to R2
-    await env.IMAGES.put(key, file.stream(), {
-      httpMetadata: {
-        contentType: file.type,
-      },
-    });
+    // 1. Upload to ImageKit (Primary)
+    let imageUrl;
+    let imageKitData = null;
+    try {
+      imageKitData = await uploadToImageKit(file, file.name, env);
+      imageUrl = imageKitData.url;
+    } catch (ikError) {
+      console.error('ImageKit upload error:', ikError);
+      throw new Error(`ImageKit upload failed: ${ikError.message}`);
+    }
 
-    // Generate public URL
-    const imageUrl = `/api/upload/image/${key}`;
+    // 2. Upload to R2 (Backup)
+    try {
+      if (env.IMAGES) {
+        await env.IMAGES.put(key, file.stream(), {
+          httpMetadata: {
+            contentType: file.type,
+          },
+        });
+      }
+    } catch (r2Error) {
+      console.error('R2 backup upload error:', r2Error);
+      // Don't fail the whole request if only backup fails
+    }
 
     return new Response(JSON.stringify({
       success: true,
       data: {
         url: imageUrl,
         key: key,
+        imageKitId: imageKitData?.fileId,
         size: file.size,
         type: file.type,
       },
@@ -101,9 +119,16 @@ async function uploadImage(request, env, corsHeaders) {
   }
 }
 
-// Get image from R2
+// Get image from R2 (Legacy support)
 async function getImageUrl(key, env, corsHeaders) {
   try {
+    if (!env.IMAGES) {
+      return new Response('R2 storage not configured', {
+        status: 500,
+        headers: corsHeaders,
+      });
+    }
+
     const object = await env.IMAGES.get(key);
 
     if (!object) {
