@@ -11,6 +11,9 @@ database_id = "f1d2ceff-31eb-4ed5-a995-24c0c534c0a1"
 # Environment variables
 [vars]
 ENVIRONMENT = "production"
+IMAGEKIT_PUBLIC_KEY = "public_KV5w/2A/gyA7ce8RlTFV+ZdjzTI="
+IMAGEKIT_PRIVATE_KEY = "private_iLwYOgaGU7XjQnUkKKzLZx///tc="
+IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/ebn7n9wrv"
 
 # R2 Storage for images
 [[r2_buckets]]
