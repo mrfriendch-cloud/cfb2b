@@ -7,7 +7,7 @@
 - [x] Task: Conductor - User Manual Verification 'Research and Setup' (Protocol in workflow.md)
 
 ## Phase 2: Backend Integration
-- [ ] Task: Create a utility for ImageKit.io API interactions.
+- [x] Task: Create a utility for ImageKit.io API interactions.
 - [ ] Task: Update the image upload handler to use ImageKit.io.
 - [ ] Task: Implement server-side verification of successful uploads.
 - [ ] Task: Conductor - User Manual Verification 'Backend Integration' (Protocol in workflow.md)
