@@ -13,10 +13,10 @@
 - [x] Task: Conductor - User Manual Verification 'Backend Integration' (Protocol in workflow.md)
 
 ## Phase 3: Frontend Update
-- [ ] Task: Update the product catalog logic to use ImageKit.io URLs.
-- [ ] Task: Implement dynamic image resizing using ImageKit.io transformation parameters.
-- [ ] Task: Verify responsive image delivery on various devices.
-- [ ] Task: Conductor - User Manual Verification 'Frontend Update' (Protocol in workflow.md)
+- [x] Task: Update the product catalog logic to use ImageKit.io URLs.
+- [x] Task: Implement dynamic image resizing using ImageKit.io transformation parameters.
+- [x] Task: Verify responsive image delivery on various devices.
+- [x] Task: Conductor - User Manual Verification 'Frontend Update' (Protocol in workflow.md)
 
 ## Phase 4: Migration and Verification
 - [ ] Task: Perform a dry run of image migration from R2 to ImageKit.io.

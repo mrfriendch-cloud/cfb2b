@@ -560,6 +560,21 @@ export function createLayout(
     // Load settings on page load
     loadWebsiteSettings();
 
+    // ImageKit helper
+    window.getImageKitUrl = function(url, transformations = '') {
+      if (!url || typeof url !== 'string' || !url.includes('ik.imagekit.io')) return url || '';
+      
+      try {
+        const urlObj = new URL(url);
+        if (transformations) {
+          urlObj.searchParams.set('tr', transformations);
+        }
+        return urlObj.toString();
+      } catch (e) {
+        return url;
+      }
+    };
+
     // Export for use in other scripts
     window.API = API;
     window.validateEmail = validateEmail;

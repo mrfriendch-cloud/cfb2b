@@ -818,6 +818,21 @@ export async function adminDashboard(env) {
      * Handles common functionality across all pages
      */
 
+    // ImageKit helper
+    window.getImageKitUrl = function(url, transformations = '') {
+      if (!url || typeof url !== 'string' || !url.includes('ik.imagekit.io')) return url || '';
+      
+      try {
+        const urlObj = new URL(url);
+        if (transformations) {
+          urlObj.searchParams.set('tr', transformations);
+        }
+        return urlObj.toString();
+      } catch (e) {
+        return url;
+      }
+    };
+
     // Mobile menu toggle
     document.addEventListener('DOMContentLoaded', function() {
       const adminMenuToggle = document.getElementById('admin-menu-toggle');
@@ -1166,8 +1181,8 @@ export async function adminDashboard(env) {
         tbody.innerHTML = paginatedCategories.map(cat => \`
           <tr>
             <td>
-              \${cat.image_url 
-                ? \`<img src="\${cat.image_url}" alt="\${cat.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">\`
+              ${cat.image_url 
+                ? `<img src="${getImageKitUrl(cat.image_url, 'w-50,h-50,cm-pad_resize,bg-F3F3F6')}" alt="${cat.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">`
                 : '<div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 12px;">No img</div>'
               }
             </td>
@@ -1467,8 +1482,8 @@ export async function adminDashboard(env) {
           html += paginatedProducts.map(product => \`
             <tr>
               <td>
-                \${product.image_url 
-                  ? \`<img src="\${product.image_url}" alt="\${product.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">\`
+                ${product.image_url 
+                  ? `<img src="${getImageKitUrl(product.image_url, 'w-50,h-50,cm-pad_resize,bg-F3F3F6')}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">`
                   : '<div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 12px;">No img</div>'
                 }
               </td>
