@@ -843,7 +843,7 @@ export async function adminDashboard(env) {
 
         <div class="form-group">
           <label class="form-label" for="product-image-url">Image URL (or upload above)</label>
-          <input type="url" id="product-image-url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg" readonly>
+          <input type="url" id="product-image-url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
         </div>
 
         <div class="form-group">

@@ -129,7 +129,7 @@ export async function productDetailPage(request, env) {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 3rem;">
               <!-- Product Images -->
               <div>
-                <img src="${getImageKitUrl(product.image_url, 'w-600,h-500,cm-pad_resize,bg-F3F3F6') || 'https://via.placeholder.com/600x400?text=No+Image'}" alt="${product.name}"
+                <img src="\${getImageKitUrl(product.image_url, 'w-600,h-500,cm-pad_resize,bg-F3F3F6') || 'https://via.placeholder.com/600x400?text=No+Image'}" alt="\${product.name}"
                   style="width: 100%; max-height: 500px; object-fit: contain; background: #f3f4f6; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
                   onerror="this.src='https://via.placeholder.com/600x400?text=Image+Not+Found'">
               </div>
