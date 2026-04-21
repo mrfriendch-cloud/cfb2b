@@ -832,18 +832,29 @@ export async function adminDashboard(env) {
         </div>
 
         <div class="image-upload-container">
-          <label class="form-label">Product Image</label>
+          <label class="form-label">Main Product Image</label>
           <div class="upload-btn-wrapper">
             <button type="button" class="btn-upload">Choose Image</button>
-            <input type="file" id="image-upload" accept="image/*" onchange="handleImageUpload(event)">
+            <input type="file" id="image-upload" accept="image/*,video/*" onchange="handleImageUpload(event)">
           </div>
           <div id="upload-status" class="uploading" style="display: none;">Uploading...</div>
           <div id="image-preview" class="image-preview"></div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="product-image-url">Image URL (or upload above)</label>
+          <label class="form-label" for="product-image-url">Main Image URL (or upload above)</label>
           <input type="url" id="product-image-url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gallery Images / Videos</label>
+          <div class="upload-btn-wrapper">
+            <button type="button" class="btn-upload">Add to Gallery</button>
+            <input type="file" id="gallery-upload" accept="image/*,video/*" onchange="handleGalleryUpload(event)">
+          </div>
+          <div id="gallery-upload-status" style="display: none; color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem;">Uploading...</div>
+          <div id="gallery-preview" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;"></div>
+          <input type="hidden" id="product-gallery-images" name="gallery_images" value="[]">
         </div>
 
         <div class="form-group">
@@ -1630,6 +1641,88 @@ export async function adminDashboard(env) {
     }
 
     // Product Management Functions
+    window.handleGalleryUpload = async function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+      if (!allowedTypes.includes(file.type)) {
+        showNotification('Invalid file type.', 'error');
+        return;
+      }
+      const maxSize = 50 * 1024 * 1024; // 50MB for video
+      if (file.size > maxSize) {
+        showNotification('File too large. Maximum size is 50MB.', 'error');
+        return;
+      }
+
+      const statusEl = document.getElementById('gallery-upload-status');
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'Uploading...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch('/api/upload/image', {
+          method: 'POST',
+          headers: { 'Authorization': \`Bearer \${token}\` },
+          body: formData,
+        });
+        const result = await response.json();
+        if (result.success) {
+          addGalleryItem(result.data.url, file.type.startsWith('video/'));
+          showNotification('Added to gallery', 'success');
+        } else {
+          showNotification(result.error || 'Upload failed', 'error');
+        }
+      } catch (err) {
+        showNotification('Upload error', 'error');
+      } finally {
+        statusEl.style.display = 'none';
+        event.target.value = '';
+      }
+    };
+
+    function addGalleryItem(url, isVideo) {
+      const container = document.getElementById('gallery-preview');
+      const hiddenInput = document.getElementById('product-gallery-images');
+      let urls = [];
+      try { urls = JSON.parse(hiddenInput.value || '[]'); } catch(e) {}
+      if (urls.includes(url)) return;
+      urls.push(url);
+      hiddenInput.value = JSON.stringify(urls);
+
+      const item = document.createElement('div');
+      item.style.cssText = 'position: relative; width: 80px; height: 80px; border-radius: 0.375rem; overflow: hidden; border: 1px solid var(--border-color);';
+      item.dataset.url = url;
+      if (isVideo || url.match(/\.(mp4|webm|ogg)/i)) {
+        item.innerHTML = '<video src="' + url + '" style="width:100%;height:100%;object-fit:cover;" muted></video>'
+          + '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:1.2rem;text-shadow:0 1px 3px rgba(0,0,0,0.8);">&#9654;</div>';
+      } else {
+        item.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;">';
+      }
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+      removeBtn.onclick = function() {
+        let urls = [];
+        try { urls = JSON.parse(hiddenInput.value || '[]'); } catch(e) {}
+        hiddenInput.value = JSON.stringify(urls.filter(function(u) { return u !== url; }));
+        item.remove();
+      };
+      item.appendChild(removeBtn);
+      container.appendChild(item);
+    }
+
+    function renderGalleryPreview(urls) {
+      const container = document.getElementById('gallery-preview');
+      const hiddenInput = document.getElementById('product-gallery-images');
+      container.innerHTML = '';
+      hiddenInput.value = JSON.stringify(urls || []);
+      (urls || []).forEach(url => addGalleryItem(url, url.match(/\.(mp4|webm|ogg)/i)));
+    }
+
     window.handleImageUpload = async function(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -1714,6 +1807,11 @@ export async function adminDashboard(env) {
             preview.innerHTML = '';
           }
 
+          // Load gallery images
+          let galleryUrls = [];
+          try { galleryUrls = JSON.parse(product.gallery_images || '[]'); } catch(e) {}
+          renderGalleryPreview(galleryUrls);
+
           // Update modal title
           document.getElementById('modal-title').textContent = 'Edit Product';
 
@@ -1732,6 +1830,8 @@ export async function adminDashboard(env) {
       document.getElementById('product-id').value = '';
       document.getElementById('image-preview').innerHTML = '';
       document.getElementById('image-upload').value = '';
+      document.getElementById('gallery-preview').innerHTML = '';
+      document.getElementById('product-gallery-images').value = '[]';
     };
 
     window.openAddProductModal = function() {
@@ -1761,6 +1861,7 @@ export async function adminDashboard(env) {
         detailed_description: document.getElementById('product-detailed-description').value,
         specifications: document.getElementById('product-specifications').value,
         image_url: document.getElementById('product-image-url').value,
+        gallery_images: (() => { try { return JSON.parse(document.getElementById('product-gallery-images').value || '[]'); } catch(e) { return []; } })(),
         price: priceVal !== '' ? parseFloat(priceVal) : null,
         quantity: quantityVal !== '' ? parseInt(quantityVal) : null,
         is_featured: document.getElementById('product-is-featured').checked,
