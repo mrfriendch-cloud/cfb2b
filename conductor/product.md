@@ -17,7 +17,7 @@ A professional B2B product exhibition website designed to showcase products to w
 - **Inquiry System:** Enable users to submit inquiries for specific products directly through the website.
 - **Catalog Management:** Robust CRUD (Create, Read, Update, Delete) operations for managing product listings and categories.
 - **Admin RBAC:** A secure admin backend with role-based access control to manage products, inquiries, and settings.
-- **ImageKit Integration:** Transition from Cloudflare R2 to ImageKit.io for efficient image management and optimization.
+- **ImageKit Integration:** Integrated ImageKit.io for efficient image management, real-time optimization, and global delivery.
 
 ## Design Guidelines
 - **Aesthetic:** Minimalist & Professional.

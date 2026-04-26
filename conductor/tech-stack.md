@@ -7,10 +7,8 @@
 - **Cloudflare KV:** Key-Value storage used for dynamic website settings and configuration.
 
 ## Storage & Media
-- **Cloudflare R2:** (Current) Object storage for images and technical documentation.
-- **ImageKit.io:** (Planned Integration) Transitioning image storage to ImageKit.io for real-time image optimization, delivery, and transformation.
-
-## Security & Auth
+- **ImageKit.io:** Primary image storage and delivery platform, providing real-time image optimization, delivery, and transformation.
+- **Cloudflare KV:** Key-Value storage used for dynamic website settings and configuration.
 - **JWT (JSON Web Tokens):** Used for stateless authentication of admin users.
 - **SHA-256 Hashing:** Secure password hashing for admin accounts stored in the D1 database.
 - **Role-Based Access Control (RBAC):** Restricting access to specific admin features based on user permissions.

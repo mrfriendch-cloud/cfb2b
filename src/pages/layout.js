@@ -20,6 +20,7 @@ export function createLayout(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="${metaDescription}">
   <title>${pageTitle}</title>
+  <link rel="icon" type="image/png" href="https://ik.imagekit.io/ebn7n9wrv/favicon.png">
   <style>
     /* Main Stylesheet for B2B Website */
 
