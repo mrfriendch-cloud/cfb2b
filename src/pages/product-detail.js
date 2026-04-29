@@ -156,11 +156,11 @@ export async function productDetailPage(request, env) {
 
           document.getElementById('send-inquiry-btn').addEventListener('click', function() {
             // Pre-fill the contact form message with product context
-            const productName = product.name;
-            const productUrl = window.location.href;
-            const messageField = document.getElementById('cfp-message');
+            var productName = product.name;
+            var productUrl = window.location.href;
+            var messageField = document.getElementById('cfp-message');
             if (messageField && typeof window.toggleContactFormPanel === 'function') {
-              messageField.value = `I'm interested in: ${productName}\nProduct URL: ${productUrl}\n\n`;
+              messageField.value = 'I am interested in: ' + productName + '\\nProduct URL: ' + productUrl + '\\n\\n';
               window.toggleContactFormPanel();
             }
           });
