@@ -3,19 +3,19 @@
  * Displays contact information and inquiry form
  */
 
-import { createLayout } from './layout';
+import { createLayout } from "./layout";
 
 export async function contactPage(env) {
   // Load settings from KV for SEO
-  let siteName = 'B2B Product Exhibition';
+  let siteName = "B2B Product Exhibition";
   try {
-    const settingsJson = await env.STATIC_ASSETS.get('website_settings');
+    const settingsJson = await env.STATIC_ASSETS.get("website_settings");
     if (settingsJson) {
       const settings = JSON.parse(settingsJson);
       siteName = settings.site_name || siteName;
     }
   } catch (error) {
-    console.error('Error loading settings for SEO:', error);
+    console.error("Error loading settings for SEO:", error);
   }
 
   const content = `
@@ -111,8 +111,8 @@ export async function contactPage(env) {
 
               <form id="contact-form">
                 <div class="form-group">
-                  <label class="form-label">Your Name *</label>
-                  <input type="text" id="contact-name" class="form-input" required>
+                  <label class="form-label">Your Name</label>
+                  <input type="text" id="contact-name" class="form-input">
                 </div>
 
                 <div class="form-group">
@@ -121,30 +121,8 @@ export async function contactPage(env) {
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Company</label>
-                  <input type="text" id="contact-company" class="form-input">
-                </div>
-
-                <div class="form-group">
                   <label class="form-label">Phone Number</label>
                   <input type="tel" id="contact-phone" class="form-input">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Country</label>
-                  <input type="text" id="contact-country" class="form-input">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Subject *</label>
-                  <select id="contact-subject" class="form-input" required>
-                    <option value="">Select a subject...</option>
-                    <option value="Product Inquiry">Product Inquiry</option>
-                    <option value="Quote Request">Quote Request</option>
-                    <option value="Technical Support">Technical Support</option>
-                    <option value="Partnership">Partnership Opportunity</option>
-                    <option value="Other">Other</option>
-                  </select>
                 </div>
 
                 <div class="form-group">
@@ -179,10 +157,8 @@ export async function contactPage(env) {
         const formData = {
           name: document.getElementById('contact-name').value,
           email: email,
-          company: document.getElementById('contact-company').value,
           phone: document.getElementById('contact-phone').value,
-          country: document.getElementById('contact-country').value,
-          message: document.getElementById('contact-subject').value + ': ' + document.getElementById('contact-message').value,
+          message: document.getElementById('contact-message').value,
         };
 
         try {
@@ -248,12 +224,12 @@ export async function contactPage(env) {
     content,
     scripts,
     `Get in touch with us - we'd love to hear from you! Contact ${siteName} for inquiries, support, and partnership opportunities.`,
-    false
+    false,
   );
 
   return new Response(html, {
     headers: {
-      'Content-Type': 'text/html;charset=UTF-8',
+      "Content-Type": "text/html;charset=UTF-8",
     },
   });
 }
