@@ -469,24 +469,34 @@ export async function adminDashboard(env) {
       .table td {
         padding: 0.75rem 0.5rem;
       }
-      /* Hide non-essential columns on mobile */
-      .table th:nth-child(3),
-      .table td:nth-child(3),
-      .table th:nth-child(6),
-      .table td:nth-child(6),
-      .table th:nth-child(7),
-      .table td:nth-child(7) {
-        display: none;
-      }
       /* Adjust button sizes on mobile */
       .table .btn {
-        padding: 0.4rem 0.75rem;
+        padding: 0.4rem 0.5rem;
         font-size: 0.75rem;
         margin-right: 0.25rem;
+        white-space: nowrap;
       }
       /* Hide heading on mobile */
       .products-header h2 {
         display: none;
+      }
+      /* Inquiries table - keep all columns visible but make compact */
+      #inquiries-list .table th,
+      #inquiries-list .table td {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.25rem;
+      }
+      #inquiries-list .table th:first-child,
+      #inquiries-list .table td:first-child {
+        min-width: 30px;
+      }
+      /* Make action buttons stack on mobile */
+      #inquiries-list .table td:last-child > div {
+        min-width: 80px;
+      }
+      #inquiries-list .table .btn {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.5rem;
       }
     }
     }
@@ -544,7 +554,7 @@ export async function adminDashboard(env) {
             <div class="stat-value" id="stat-inquiries">0</div>
           </div>
           <div class="stat-card">
-            <h3>Pending Inquiries</h3>
+            <h3>Recent Inquiries</h3>
             <div class="stat-value" id="stat-pending">0</div>
           </div>
         </div>
@@ -556,13 +566,11 @@ export async function adminDashboard(env) {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Product</th>
-                <th>Status</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody id="recent-inquiries-tbody">
-              <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+              <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
             </tbody>
           </table>
         </div>
@@ -842,11 +850,6 @@ export async function adminDashboard(env) {
         <div class="form-group">
           <label class="form-label" for="product-detailed-description">Detailed Description</label>
           <textarea id="product-detailed-description" name="detailed_description" class="form-textarea" placeholder="Full product description"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="product-specifications">Specifications</label>
-          <textarea id="product-specifications" name="specifications" class="form-textarea" placeholder="Technical specifications"></textarea>
         </div>
 
         <div class="image-upload-container">
@@ -1469,13 +1472,11 @@ export async function adminDashboard(env) {
               <tr>
                 <td>\${inquiry.name}</td>
                 <td>\${inquiry.email}</td>
-                <td>\${inquiry.product_name || 'General Inquiry'}</td>
-                <td><span class="badge badge-\${inquiry.status}">\${inquiry.status}</span></td>
                 <td>\${new Date(inquiry.created_at).toLocaleDateString()}</td>
               </tr>
             \`).join('');
           } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No recent inquiries</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No recent inquiries</td></tr>';
           }
         }
       } catch (error) {
@@ -1627,8 +1628,6 @@ export async function adminDashboard(env) {
                   <th>ID</th>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Product</th>
-                  <th>Status</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
@@ -1639,12 +1638,12 @@ export async function adminDashboard(env) {
                     <td>\${inquiry.id}</td>
                     <td>\${inquiry.name}</td>
                     <td>\${inquiry.email}</td>
-                    <td>\${inquiry.product_name || 'General'}</td>
-                    <td><span class="badge badge-\${inquiry.status}">\${inquiry.status}</span></td>
                     <td>\${new Date(inquiry.created_at).toLocaleDateString()}</td>
                     <td>
-                      <button onclick="viewInquiry(\${inquiry.id})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; margin-right: 0.5rem;">View</button>
-                      \${isSuperAdmin ? \`<button onclick="deleteInquiry(\${inquiry.id})" class="btn" style="background: #dc2626; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;">Delete</button>\` : ''}
+                      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <button onclick="viewInquiry(\${inquiry.id})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; width: 100%;">View</button>
+                        <button onclick="deleteInquiry(\${inquiry.id})" class="btn" style="background: #dc2626; color: white; padding: 0.5rem 1rem; font-size: 0.85rem; width: 100%;">Delete</button>
+                      </div>
                     </td>
                   </tr>
                 \`).join('')}
@@ -1810,7 +1809,6 @@ export async function adminDashboard(env) {
           document.getElementById('product-category').value = product.category_id || '';
           document.getElementById('product-description').value = product.description || '';
           document.getElementById('product-detailed-description').value = product.detailed_description || '';
-          document.getElementById('product-specifications').value = product.specifications || '';
           document.getElementById('product-image-url').value = product.image_url || '';
           document.getElementById('product-price').value = product.price !== null && product.price !== undefined ? product.price : '';
           document.getElementById('product-quantity').value = product.quantity !== null && product.quantity !== undefined ? product.quantity : '';
@@ -1877,7 +1875,6 @@ export async function adminDashboard(env) {
         category_id: document.getElementById('product-category').value,
         description: document.getElementById('product-description').value,
         detailed_description: document.getElementById('product-detailed-description').value,
-        specifications: document.getElementById('product-specifications').value,
         image_url: document.getElementById('product-image-url').value,
         gallery_images: (() => { try { return JSON.parse(document.getElementById('product-gallery-images').value || '[]'); } catch(e) { return []; } })(),
         price: priceVal !== '' ? parseFloat(priceVal) : null,

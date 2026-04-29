@@ -141,13 +141,6 @@ export async function productDetailPage(request, env) {
             ? '<div style="display:flex;gap:1.5rem;margin-bottom:1.5rem;flex-wrap:wrap;">' + priceHtml + '</div>'
             : '';
 
-          var specsHtml = product.specifications
-            ? '<div style="background:white;padding:2rem;border-radius:0.5rem;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'
-              + '<h2 style="font-size:1.5rem;margin-bottom:1rem;color:var(--primary-color);">Specifications</h2>'
-              + '<pre style="color:var(--text-dark);line-height:2;white-space:pre-line;font-family:inherit;">' + product.specifications + '</pre>'
-              + '</div>'
-            : '';
-
           document.getElementById('product-detail').innerHTML =
             '<div style="margin-bottom:2rem;">'
               + '<a href="/" style="color:var(--text-light);text-decoration:none;">Home</a>'
@@ -172,8 +165,7 @@ export async function productDetailPage(request, env) {
             + '<div style="background:var(--bg-light);padding:2rem;border-radius:0.5rem;margin-bottom:2rem;">'
               + '<h2 style="font-size:1.5rem;margin-bottom:1rem;color:var(--primary-color);">Product Description</h2>'
               + '<p style="color:var(--text-dark);line-height:1.8;white-space:pre-line;">' + (product.detailed_description || product.description || 'No detailed description available') + '</p>'
-            + '</div>'
-            + specsHtml;
+            + '</div>';
 
           window.selectMedia = function(idx) {
             var url = allMedia[idx];
