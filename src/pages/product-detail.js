@@ -35,28 +35,6 @@ export async function productDetailPage(request, env) {
     <div id="product-detail" class="container" style="margin-top: 2rem; margin-bottom: 3rem;">
       <div class="spinner"></div>
     </div>
-
-    <div id="inquiry-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; padding: 2rem;">
-      <div style="max-width: 600px; margin: 2rem auto; background: white; border-radius: 0.5rem; padding: 2rem; max-height: 90vh; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="color: var(--primary-color);">Send Inquiry</h2>
-          <button id="close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light);">&times;</button>
-        </div>
-        <form id="inquiry-form">
-          <input type="hidden" id="inquiry-product-id" value="${productId}">
-          <div class="form-group"><label class="form-label">Your Name *</label><input type="text" id="inquiry-name" class="form-input" required></div>
-          <div class="form-group"><label class="form-label">Email *</label><input type="email" id="inquiry-email" class="form-input" required></div>
-          <div class="form-group"><label class="form-label">Company</label><input type="text" id="inquiry-company" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="inquiry-phone" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Country</label><input type="text" id="inquiry-country" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Message *</label><textarea id="inquiry-message" class="form-textarea" required></textarea></div>
-          <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn btn-primary">Send Inquiry</button>
-            <button type="button" id="cancel-inquiry" class="btn" style="background: #6b7280; color: white;">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
   `;
 
   const scripts = `
@@ -176,50 +154,22 @@ export async function productDetailPage(request, env) {
             });
           };
 
-          document.getElementById('send-inquiry-btn').addEventListener('click', openInquiryModal);
+          document.getElementById('send-inquiry-btn').addEventListener('click', function() {
+            // Pre-fill the contact form message with product context
+            const productName = product.name;
+            const productUrl = window.location.href;
+            const messageField = document.getElementById('cfp-message');
+            if (messageField && typeof window.toggleContactFormPanel === 'function') {
+              messageField.value = `I'm interested in: ${productName}\nProduct URL: ${productUrl}\n\n`;
+              window.toggleContactFormPanel();
+            }
+          });
 
         } catch (error) {
           console.error('Error loading product:', error);
           document.getElementById('product-detail').innerHTML = '<p style="text-align:center;color:var(--text-light);">Unable to load product details. Please try again later.</p>';
         }
       }
-
-      function openInquiryModal() {
-        document.getElementById('inquiry-modal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeInquiryModal() {
-        document.getElementById('inquiry-modal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-      }
-
-      document.getElementById('inquiry-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        var formData = {
-          product_id: parseInt(document.getElementById('inquiry-product-id').value),
-          name: document.getElementById('inquiry-name').value,
-          email: document.getElementById('inquiry-email').value,
-          company: document.getElementById('inquiry-company').value,
-          phone: document.getElementById('inquiry-phone').value,
-          country: document.getElementById('inquiry-country').value,
-          message: document.getElementById('inquiry-message').value,
-        };
-        try {
-          await API.post('/inquiries', formData);
-          showNotification('Inquiry sent successfully! We will contact you soon.', 'success');
-          closeInquiryModal();
-          document.getElementById('inquiry-form').reset();
-        } catch (error) {
-          showNotification('Failed to send inquiry. Please try again.', 'error');
-        }
-      });
-
-      document.getElementById('close-modal').addEventListener('click', closeInquiryModal);
-      document.getElementById('cancel-inquiry').addEventListener('click', closeInquiryModal);
-      document.getElementById('inquiry-modal').addEventListener('click', function(e) {
-        if (e.target.id === 'inquiry-modal') closeInquiryModal();
-      });
 
       loadProductDetail();
 
