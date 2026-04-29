@@ -679,6 +679,24 @@ export async function adminDashboard(env) {
               <input type="url" id="settings-twitter" name="twitter" class="form-input" placeholder="https://twitter.com/yourcompany">
             </div>
 
+            <h3 style="font-size: 1.1rem; margin: 2rem 0 1rem; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+              Chat Widget
+            </h3>
+
+            <div class="form-group">
+              <label class="form-label">Chat Widget Mode</label>
+              <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="chat_widget_mode" value="live_chat" id="mode-live-chat" />
+                  Live Chat
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="chat_widget_mode" value="contact_form" id="mode-contact-form" />
+                  Contact Form
+                </label>
+              </div>
+            </div>
+
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
               <button type="submit" id="save-settings-btn" class="btn btn-primary" style="margin-right: 1rem;">Save Settings</button>
               <button type="button" class="btn btn-secondary" onclick="loadSettings()">Reset</button>
@@ -1977,6 +1995,16 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
           document.getElementById('settings-linkedin').value = settings.linkedin || '';
           document.getElementById('settings-facebook').value = settings.facebook || '';
           document.getElementById('settings-twitter').value = settings.twitter || '';
+
+          // Set chat widget mode radio button
+          const chatWidgetMode = settings.chat_widget_mode || 'live_chat';
+          const modeRadio = document.querySelector(\`input[name="chat_widget_mode"][value="\${chatWidgetMode}"]\`);
+          if (modeRadio) {
+            modeRadio.checked = true;
+          } else {
+            // Default to live_chat if value is unrecognized
+            document.getElementById('mode-live-chat').checked = true;
+          }
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -2042,6 +2070,7 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
         linkedin: document.getElementById('settings-linkedin').value,
         facebook: document.getElementById('settings-facebook').value,
         twitter: document.getElementById('settings-twitter').value,
+        chat_widget_mode: document.querySelector('input[name="chat_widget_mode"]:checked')?.value || 'live_chat',
       };
 
       try {

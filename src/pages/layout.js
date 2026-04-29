@@ -552,9 +552,19 @@ export function createLayout(
               if (settings.twitter === '#') socialLinks[2].parentElement.style.display = 'none';
             }
           }
+
+          // Initialize widget mode from settings
+          const widgetMode = settings.chat_widget_mode || 'live_chat';
+          if (typeof window.initWidgetMode === 'function') {
+            window.initWidgetMode(widgetMode);
+          }
         }
       } catch (error) {
         console.error('Error loading website settings:', error);
+        // Default to live_chat on error
+        if (typeof window.initWidgetMode === 'function') {
+          window.initWidgetMode('live_chat');
+        }
       }
     }
 
@@ -757,6 +767,127 @@ export function createLayout(
       }
       #chat-bubble { bottom: 16px; right: 16px; }
     }
+
+    /* Contact Form Panel */
+    #contact-form-panel {
+      position: fixed;
+      bottom: 92px;
+      right: 24px;
+      z-index: 9998;
+      width: 350px;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: chatSlideUp 0.2s ease-out;
+    }
+    #contact-form-panel.open {
+      display: flex;
+    }
+    #cfp-header {
+      background: var(--primary-color);
+      color: white;
+      padding: 0.9rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #cfp-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    #cfp-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 0.25rem;
+      opacity: 0.85;
+    }
+    #cfp-close-btn:hover { opacity: 1; }
+    #cfp-body {
+      padding: 1rem;
+      overflow-y: auto;
+      max-height: 420px;
+    }
+    #cfp-body .form-group {
+      margin-bottom: 1rem;
+    }
+    #cfp-body .form-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+    #cfp-body .form-input,
+    #cfp-body .form-textarea {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    #cfp-body .form-input:focus,
+    #cfp-body .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    #cfp-body .form-textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+    #cfp-submit-btn {
+      width: 100%;
+      padding: 0.65rem 1rem;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 0.25rem;
+    }
+    #cfp-submit-btn:hover { background: var(--secondary-color); }
+    #cfp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    #cfp-success-msg,
+    #cfp-error-msg {
+      padding: 0.75rem 1rem;
+      font-size: 0.88rem;
+      border-top: 1px solid var(--border-color);
+    }
+    #cfp-success-msg {
+      color: #065f46;
+      background: #d1fae5;
+    }
+    #cfp-error-msg {
+      color: #991b1b;
+      background: #fee2e2;
+    }
+    .cfp-field-error {
+      color: #ef4444;
+      font-size: 0.78rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+    @media (max-width: 480px) {
+      #contact-form-panel {
+        width: calc(100vw - 16px);
+        right: 8px;
+        bottom: 84px;
+      }
+    }
   </style>
 
   <!-- Chat Bubble Button -->
@@ -786,6 +917,47 @@ export function createLayout(
     </div>
   </div>
 
+  <!-- Contact Form Panel -->
+  <div id="contact-form-panel" role="dialog" aria-label="Contact form" style="display:none;">
+    <div id="cfp-header">
+      <h3>Send us a message</h3>
+      <button id="cfp-close-btn" aria-label="Close contact form" onclick="toggleContactFormPanel()">✕</button>
+    </div>
+    <div id="cfp-body">
+      <form id="cfp-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="cfp-name">Name</label>
+          <input id="cfp-name" class="form-input" type="text" name="name"
+                 placeholder="Your name (optional)" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfp-email">Email <span aria-hidden="true">*</span></label>
+          <input id="cfp-email" class="form-input" type="email" name="email"
+                 placeholder="your@email.com" required autocomplete="email">
+          <div id="cfp-email-error" class="cfp-field-error" role="alert">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfp-phone">Phone</label>
+          <input id="cfp-phone" class="form-input" type="tel" name="phone"
+                 placeholder="Your phone (optional)" autocomplete="tel">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="cfp-message">Message <span aria-hidden="true">*</span></label>
+          <textarea id="cfp-message" class="form-textarea" name="message"
+                    placeholder="How can we help you?" required></textarea>
+          <div id="cfp-message-error" class="cfp-field-error" role="alert">Please enter a message.</div>
+        </div>
+        <button id="cfp-submit-btn" type="submit">Send Message</button>
+      </form>
+    </div>
+    <div id="cfp-success-msg" style="display:none;" role="status">
+      ✓ Your message has been sent. We'll be in touch soon!
+    </div>
+    <div id="cfp-error-msg" style="display:none;" role="alert">
+      Something went wrong. Please try again.
+    </div>
+  </div>
+
   <script>
     (function() {
       const POLL_INTERVAL = 3000;
@@ -796,6 +968,7 @@ export function createLayout(
       let unreadCount = 0;
       let panelOpen = false;
       let sessionReady = false;
+      let widgetMode = 'live_chat';
 
       function generateId() {
         return crypto.randomUUID
@@ -819,6 +992,11 @@ export function createLayout(
       });
 
       window.toggleChatPanel = function() {
+        if (widgetMode !== 'live_chat') {
+          toggleContactFormPanel();
+          return;
+        }
+
         panelOpen = !panelOpen;
         const panel = document.getElementById('chat-panel');
         panel.classList.toggle('open', panelOpen);
@@ -839,6 +1017,123 @@ export function createLayout(
           stopPolling();
         }
       };
+
+      // STATE ISOLATION GUARD: initWidgetMode() only sets the module-level
+      // widgetMode variable and manipulates the #contact-form-panel DOM element.
+      // It does NOT modify chatSessionId, lastMsgId, pollTimer, panelOpen,
+      // sessionReady, unreadCount, or chatVisitorName.
+      window.initWidgetMode = function(mode) {
+        const validModes = ['live_chat', 'contact_form'];
+        widgetMode = validModes.includes(mode) ? mode : 'live_chat';
+
+        const cfpPanel = document.getElementById('contact-form-panel');
+
+        if (widgetMode === 'contact_form') {
+          // Contact form mode: ensure contact form panel is available but hidden until clicked
+          // Do NOT initialize live chat session or start polling
+          if (cfpPanel) {
+            cfpPanel.style.display = '';
+            cfpPanel.classList.remove('open');
+          }
+        } else {
+          // Live chat mode: hide/remove contact form panel, preserve existing behavior
+          if (cfpPanel) {
+            cfpPanel.style.display = 'none';
+            cfpPanel.classList.remove('open');
+          }
+        }
+      };
+
+      // STATE ISOLATION GUARD: toggleContactFormPanel() only manipulates the
+      // #contact-form-panel DOM element and the bubble icon. It does NOT read
+      // from or write to any live chat IIFE variables (chatSessionId,
+      // lastMsgId, pollTimer, panelOpen, sessionReady, unreadCount,
+      // chatVisitorName).
+      function toggleContactFormPanel() {
+        const cfpPanel = document.getElementById('contact-form-panel');
+        if (!cfpPanel) return;
+
+        const isOpen = cfpPanel.classList.contains('open');
+        cfpPanel.classList.toggle('open', !isOpen);
+
+        document.getElementById('chat-bubble').innerHTML = !isOpen
+          ? '✕<span id="chat-unread-badge" style="display:none"></span>'
+          : '💬<span id="chat-unread-badge" style="display:none"></span>';
+
+        if (!isOpen) {
+          // Panel is now open — focus first input
+          setTimeout(() => {
+            const firstInput = cfpPanel.querySelector('input, textarea');
+            if (firstInput) firstInput.focus();
+          }, 100);
+        }
+      }
+
+      // Expose toggleContactFormPanel for the ✕ close button
+      window.toggleContactFormPanel = toggleContactFormPanel;
+
+      // STATE ISOLATION GUARD: submitContactForm() operates exclusively on
+      // contact form panel DOM elements (#cfp-*). It does NOT read from or
+      // write to any live chat IIFE variables (chatSessionId, lastMsgId,
+      // pollTimer, panelOpen, sessionReady, unreadCount, chatVisitorName).
+      async function submitContactForm() {
+        const emailInput = document.getElementById('cfp-email');
+        const messageInput = document.getElementById('cfp-message');
+        const emailError = document.getElementById('cfp-email-error');
+        const messageError = document.getElementById('cfp-message-error');
+        const submitBtn = document.getElementById('cfp-submit-btn');
+        const successMsg = document.getElementById('cfp-success-msg');
+        const errorMsg = document.getElementById('cfp-error-msg');
+
+        // Reset previous feedback
+        emailError.style.display = 'none';
+        messageError.style.display = 'none';
+        successMsg.style.display = 'none';
+        errorMsg.style.display = 'none';
+
+        const email = emailInput.value.trim();
+        const message = messageInput.value.trim();
+
+        // Validate email
+        if (!email || !validateEmail(email)) {
+          emailError.style.display = 'block';
+          emailInput.focus();
+          return;
+        }
+
+        // Validate message
+        if (!message) {
+          messageError.style.display = 'block';
+          messageInput.focus();
+          return;
+        }
+
+        const name = (document.getElementById('cfp-name').value || '').trim();
+        const phone = (document.getElementById('cfp-phone').value || '').trim();
+
+        // Disable submit button during in-flight request
+        submitBtn.disabled = true;
+
+        try {
+          await API.post('/inquiries', { name, email, phone, message });
+
+          // Success: show success message, reset form fields
+          successMsg.style.display = 'block';
+          document.getElementById('cfp-form').reset();
+        } catch (err) {
+          // Error: show error message, retain entered data
+          errorMsg.style.display = 'block';
+          console.error('Contact form submission error:', err);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      }
+
+      // Wire form submit event
+      document.getElementById('cfp-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitContactForm();
+      });
 
       async function initSession() {
         if (sessionReady) return;
