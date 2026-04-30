@@ -38,8 +38,28 @@ export async function productDetailPage(request, env) {
   `;
 
   const scripts = `
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.3.0/lib/marked.umd.min.js"
+      integrity="sha512-V6rGY7jjOEUc7q5Ews8mMlretz1Vn2wLdMW/qgABLWunzsLfluM0FwHuGjGQ1lc8jO5vGpGIGFE+rTzB+63HdA=="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"
+      integrity="sha512-78KH17QLT5e55GJqP76vutp1D2iAoy06WcYBXB6iBCsmO6wWzx0Qdg8EDpm8mKXv68BcvHOyeeP4wxAL0twJGQ=="
+      crossorigin="anonymous"
+    ></script>
     <script>
       const productId = "${productId}";
+
+      function renderMarkdown(text) {
+        if (!text || text.trim() === '') return null;
+        try {
+          var rawHtml = marked.parse(text);
+          return DOMPurify.sanitize(rawHtml);
+        } catch (_err) {
+          return null;
+        }
+      }
 
       function isVideo(url) {
         return /\\.(mp4|webm|ogg)/i.test(url.split('?')[0]);
@@ -142,7 +162,21 @@ export async function productDetailPage(request, env) {
             + '</div>'
             + '<div style="background:var(--bg-light);padding:2rem;border-radius:0.5rem;margin-bottom:2rem;">'
               + '<h2 style="font-size:1.5rem;margin-bottom:1rem;color:var(--primary-color);">Product Description</h2>'
-              + '<p style="color:var(--text-dark);line-height:1.8;white-space:pre-line;">' + (product.detailed_description || product.description || 'No detailed description available') + '</p>'
+              + (function() {
+                  var mdText = product.detailed_description || '';
+                  if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+                    try {
+                      var safeHtml = renderMarkdown(mdText);
+                      if (safeHtml) {
+                        return '<div class="md-body">' + safeHtml + '</div>';
+                      }
+                      return '<p>No detailed description available</p>';
+                    } catch (_e) {
+                      return '<p style="color:var(--text-dark);line-height:1.8;white-space:pre-line;">' + mdText + '</p>';
+                    }
+                  }
+                  return '<p style="color:var(--text-dark);line-height:1.8;white-space:pre-line;">' + (mdText || product.description || 'No detailed description available') + '</p>';
+                })()
             + '</div>';
 
           window.selectMedia = function(idx) {
@@ -176,6 +210,29 @@ export async function productDetailPage(request, env) {
       var responsiveStyle = document.createElement('style');
       responsiveStyle.textContent = '@media (max-width: 768px) { #product-grid { grid-template-columns: 1fr !important; } #gallery-container { flex-direction: column !important; } #gallery-thumbs { flex-direction: row !important; max-height: none !important; overflow-x: auto; overflow-y: hidden; padding-right: 0; padding-bottom: 4px; order: 2; } #main-media-wrap { order: 1; } }';
       document.head.appendChild(responsiveStyle);
+
+      var mdBodyStyle = document.createElement('style');
+      mdBodyStyle.textContent = [
+        '.md-body { color: var(--text-dark, #1f2937); line-height: 1.75; font-size: 1rem; }',
+        '.md-body h1 { font-size: 2rem; font-weight: 700; margin: 1.5rem 0 0.75rem; color: var(--text-dark, #111827); }',
+        '.md-body h2 { font-size: 1.6rem; font-weight: 700; margin: 1.4rem 0 0.7rem; color: var(--text-dark, #111827); }',
+        '.md-body h3 { font-size: 1.35rem; font-weight: 600; margin: 1.25rem 0 0.6rem; color: var(--text-dark, #111827); }',
+        '.md-body h4 { font-size: 1.15rem; font-weight: 600; margin: 1.1rem 0 0.5rem; color: var(--text-dark, #111827); }',
+        '.md-body h5 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; color: var(--text-dark, #111827); }',
+        '.md-body h6 { font-size: 0.9rem; font-weight: 600; margin: 0.9rem 0 0.45rem; color: var(--text-light, #6b7280); }',
+        '.md-body ul { padding-left: 1.75rem; margin: 0.75rem 0; list-style: disc; }',
+        '.md-body ol { padding-left: 1.75rem; margin: 0.75rem 0; list-style: decimal; }',
+        '.md-body table { border-collapse: collapse; width: 100%; margin: 1rem 0; }',
+        '.md-body th { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; background: #f9fafb; font-weight: 600; text-align: left; }',
+        '.md-body td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; }',
+        '.md-body tr:nth-child(even) { background-color: #f3f4f6; }',
+        '.md-body code { background: #f1f5f9; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.875em; padding: 0.15em 0.35em; border-radius: 0.25rem; }',
+        '.md-body pre { background: #1e293b; color: #e2e8f0; padding: 1rem 1.25rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }',
+        '.md-body pre code { background: transparent; color: inherit; padding: 0; font-size: 0.875rem; border-radius: 0; }',
+        '.md-body blockquote { border-left: 4px solid var(--primary-color, #2563eb); padding-left: 1rem; margin: 1rem 0; color: var(--text-light, #6b7280); font-style: italic; }',
+        '.md-body hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }'
+      ].join(' ');
+      document.head.appendChild(mdBodyStyle);
     </script>
   `;
 

@@ -848,7 +848,7 @@ export async function adminDashboard(env) {
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="product-detailed-description">Detailed Description</label>
+          <label class="form-label" for="product-detailed-description">Detailed Description <span style="font-weight:400;color:var(--text-light);font-size:0.85rem;">(Supports Markdown)</span></label>
           <textarea id="product-detailed-description" name="detailed_description" class="form-textarea" placeholder="Full product description"></textarea>
         </div>
 
