@@ -18,6 +18,40 @@ export async function contactPage(env) {
     console.error("Error loading settings for SEO:", error);
   }
 
+  // Generate SEO tags
+  let seoTags = "";
+  try {
+    const { URLManager } = await import("../seo/url-manager");
+    const { MetaTagManager } = await import("../seo/meta-manager");
+    const { SchemaGenerator } = await import("../seo/schema-generator");
+
+    const urlManager = new URLManager(env);
+    const metaManager = new MetaTagManager(env);
+    const schemaGenerator = new SchemaGenerator(env);
+
+    const canonicalUrl = urlManager.generateCanonicalUrl("/contact");
+
+    // Meta tags
+    const metaTagsHtml = metaManager.generateMetaTags({
+      title: `Contact Us - ${siteName}`,
+      description: `Get in touch with us - we'd love to hear from you! Contact ${siteName} for inquiries, support, and partnership opportunities.`,
+      canonicalUrl,
+      imageUrl: null,
+      pageType: "website",
+    });
+
+    // Breadcrumbs schema
+    const breadcrumbs = [
+      { name: "Home", url: "/" },
+      { name: "Contact Us", url: "/contact" },
+    ];
+    const breadcrumbSchemaHtml = schemaGenerator.generateBreadcrumbSchema(breadcrumbs);
+
+    seoTags = `${metaTagsHtml}\n  ${breadcrumbSchemaHtml}`;
+  } catch (seoError) {
+    console.error("Error generating contact page SEO tags:", seoError);
+  }
+
   const content = `
     <!-- Page Header -->
     <section class="hero" style="padding: 3rem 2rem;">
@@ -225,6 +259,7 @@ export async function contactPage(env) {
     scripts,
     `Get in touch with us - we'd love to hear from you! Contact ${siteName} for inquiries, support, and partnership opportunities.`,
     false,
+    seoTags,
   );
 
   return new Response(html, {

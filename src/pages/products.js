@@ -18,6 +18,77 @@ export async function productsPage(env) {
     console.error("Error loading settings for SEO:", error);
   }
 
+  // Fetch active products with slugs for ItemList schema
+  let activeProducts = [];
+  try {
+    const { results } = await env.DB.prepare(`
+      SELECT p.id, p.name, s.slug
+      FROM products p
+      LEFT JOIN product_slugs s ON p.id = s.product_id
+      WHERE p.is_active = 1
+      ORDER BY p.created_at DESC
+    `).all();
+    activeProducts = results || [];
+  } catch (error) {
+    console.error("Error fetching products for ItemList schema:", error);
+  }
+
+  // Generate SEO tags
+  let seoTags = "";
+  try {
+    const { URLManager } = await import("../seo/url-manager");
+    const { MetaTagManager } = await import("../seo/meta-manager");
+    const { SchemaGenerator } = await import("../seo/schema-generator");
+
+    const urlManager = new URLManager(env);
+    const metaManager = new MetaTagManager(env);
+    const schemaGenerator = new SchemaGenerator(env);
+
+    const canonicalUrl = urlManager.generateCanonicalUrl("/products");
+
+    // Meta tags
+    const metaTagsHtml = metaManager.generateMetaTags({
+      title: `Products - ${siteName}`,
+      description: `Browse our comprehensive range of high-quality products - ${siteName}`,
+      canonicalUrl,
+      imageUrl: null,
+      pageType: "website",
+    });
+
+    // Breadcrumbs schema
+    const breadcrumbs = [
+      { name: "Home", url: "/" },
+      { name: "Products", url: "/products" },
+    ];
+    const breadcrumbSchemaHtml = schemaGenerator.generateBreadcrumbSchema(breadcrumbs);
+
+    // ItemList schema
+    const itemListSchemaHtml = schemaGenerator.generateItemListSchema(activeProducts, canonicalUrl);
+
+    // Parse and combine schemas
+    const parseSchemaHtml = (html) => {
+      if (!html) return null;
+      const match = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+      try {
+        return match ? JSON.parse(match[1].trim()) : null;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const breadcrumbSchemaObj = parseSchemaHtml(breadcrumbSchemaHtml);
+    const itemListSchemaObj = parseSchemaHtml(itemListSchemaHtml);
+
+    const combinedSchemaHtml = schemaGenerator.generateMultiSchema([
+      breadcrumbSchemaObj,
+      itemListSchemaObj,
+    ].filter(Boolean));
+
+    seoTags = `${metaTagsHtml}\n  ${combinedSchemaHtml}`;
+  } catch (seoError) {
+    console.error("Error generating products page SEO tags:", seoError);
+  }
+
   const content = `
     <!-- Page Header -->
     <section class="hero" style="padding: 3rem 2rem;">
@@ -250,6 +321,7 @@ export async function productsPage(env) {
     scripts,
     `Browse our comprehensive range of high-quality products - ${siteName}`,
     false, // Don't use title suffix, we already included site name
+    seoTags,
   );
 
   return new Response(html, {

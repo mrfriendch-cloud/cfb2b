@@ -9,17 +9,26 @@ export function createLayout(
   additionalScripts = "",
   metaDescription = "B2B Product Exhibition - High-quality industrial products and solutions",
   useTitleSuffix = true,
+  seoTags = "",
 ) {
   const pageTitle = useTitleSuffix
     ? `${title} - B2B Product Exhibition`
     : title;
+  
+  const hasSeoTitle = seoTags && seoTags.includes("<title>");
+  const hasSeoDesc = seoTags && (seoTags.includes('name="description"') || seoTags.includes('name=\'description\''));
+  
+  const titleBlock = hasSeoTitle ? "" : `<title>${pageTitle}</title>`;
+  const descBlock = hasSeoDesc ? "" : `<meta name="description" content="${metaDescription}">`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${metaDescription}">
-  <title>${pageTitle}</title>
+  ${descBlock}
+  ${titleBlock}
+  ${seoTags}
   <link rel="icon" type="image/png" href="https://ik.imagekit.io/ebn7n9wrv/favicon.png">
   <style>
     /* Main Stylesheet for B2B Website */
@@ -539,17 +548,19 @@ export function createLayout(
           // Update social media links
           const socialLinks = document.querySelectorAll('.footer-section:nth-child(4) ul li a');
           if (socialLinks.length >= 3) {
-            if (settings.linkedin) {
-              socialLinks[0].href = settings.linkedin;
-              if (settings.linkedin === '#') socialLinks[0].parentElement.style.display = 'none';
+            const youtubeVal = settings.youtube || settings.linkedin;
+            if (youtubeVal) {
+              socialLinks[0].href = youtubeVal;
+              if (youtubeVal === '#') socialLinks[0].parentElement.style.display = 'none';
             }
             if (settings.facebook) {
               socialLinks[1].href = settings.facebook;
               if (settings.facebook === '#') socialLinks[1].parentElement.style.display = 'none';
             }
-            if (settings.twitter) {
-              socialLinks[2].href = settings.twitter;
-              if (settings.twitter === '#') socialLinks[2].parentElement.style.display = 'none';
+            const xVal = settings.x || settings.twitter;
+            if (xVal) {
+              socialLinks[2].href = xVal;
+              if (xVal === '#') socialLinks[2].parentElement.style.display = 'none';
             }
           }
 
@@ -1368,9 +1379,9 @@ function createFooter() {
       <div class="footer-section">
         <h3>Follow Us</h3>
         <ul>
-          <li><a href="#" target="_blank">LinkedIn</a></li>
+          <li><a href="#" target="_blank">YouTube</a></li>
           <li><a href="#" target="_blank">Facebook</a></li>
-          <li><a href="#" target="_blank">Twitter</a></li>
+          <li><a href="#" target="_blank">X</a></li>
         </ul>
       </div>
     </div>

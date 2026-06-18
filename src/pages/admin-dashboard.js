@@ -673,8 +673,8 @@ export async function adminDashboard(env) {
             </h3>
 
             <div class="form-group">
-              <label class="form-label" for="settings-linkedin">LinkedIn URL</label>
-              <input type="url" id="settings-linkedin" name="linkedin" class="form-input" placeholder="https://linkedin.com/company/yourcompany">
+              <label class="form-label" for="settings-youtube">YouTube URL</label>
+              <input type="url" id="settings-youtube" name="youtube" class="form-input" placeholder="https://youtube.com/c/yourchannel">
             </div>
 
             <div class="form-group">
@@ -683,8 +683,8 @@ export async function adminDashboard(env) {
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="settings-twitter">Twitter URL</label>
-              <input type="url" id="settings-twitter" name="twitter" class="form-input" placeholder="https://twitter.com/yourcompany">
+              <label class="form-label" for="settings-x">X URL</label>
+              <input type="url" id="settings-x" name="x" class="form-input" placeholder="https://x.com/yourcompany">
             </div>
 
             <h3 style="font-size: 1.1rem; margin: 2rem 0 1rem; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
@@ -1989,9 +1989,9 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
           document.getElementById('settings-email').value = settings.email || '';
           document.getElementById('settings-phone').value = settings.phone || '';
           document.getElementById('settings-address').value = settings.address || '';
-          document.getElementById('settings-linkedin').value = settings.linkedin || '';
+          document.getElementById('settings-youtube').value = settings.youtube || settings.linkedin || '';
           document.getElementById('settings-facebook').value = settings.facebook || '';
-          document.getElementById('settings-twitter').value = settings.twitter || '';
+          document.getElementById('settings-x').value = settings.x || settings.twitter || '';
 
           // Set chat widget mode radio button
           const chatWidgetMode = settings.chat_widget_mode || 'live_chat';
@@ -2064,9 +2064,9 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
         email: document.getElementById('settings-email').value,
         phone: document.getElementById('settings-phone').value,
         address: document.getElementById('settings-address').value,
-        linkedin: document.getElementById('settings-linkedin').value,
+        youtube: document.getElementById('settings-youtube').value,
         facebook: document.getElementById('settings-facebook').value,
-        twitter: document.getElementById('settings-twitter').value,
+        x: document.getElementById('settings-x').value,
         chat_widget_mode: document.querySelector('input[name="chat_widget_mode"]:checked')?.value || 'live_chat',
       };
 

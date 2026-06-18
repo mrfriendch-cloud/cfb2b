@@ -35,6 +35,9 @@ async function getSettings(env, corsHeaders) {
     let settings = {};
     if (settingsJson) {
       settings = JSON.parse(settingsJson);
+      // Map old keys to new ones for compatibility
+      if (settings.linkedin && !settings.youtube) settings.youtube = settings.linkedin;
+      if (settings.twitter && !settings.x) settings.x = settings.twitter;
     } else {
       // Default settings if not found
       settings = {
@@ -46,9 +49,9 @@ async function getSettings(env, corsHeaders) {
         email: "info@example.com",
         phone: "+1 234 567 8900",
         address: "123 Business St, City, Country",
-        linkedin: "",
+        youtube: "",
         facebook: "",
-        twitter: "",
+        x: "",
       };
     }
 
@@ -100,9 +103,11 @@ async function updateSettings(request, env, corsHeaders) {
       email: data.email || "",
       phone: data.phone || "",
       address: data.address || "",
-      linkedin: data.linkedin || "",
+      youtube: data.youtube || data.linkedin || "",
+      linkedin: data.youtube || data.linkedin || "",
       facebook: data.facebook || "",
-      twitter: data.twitter || "",
+      x: data.x || data.twitter || "",
+      twitter: data.x || data.twitter || "",
       updated_at: new Date().toISOString(),
     };
 

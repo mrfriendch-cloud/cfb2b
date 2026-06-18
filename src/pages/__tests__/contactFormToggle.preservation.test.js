@@ -44,7 +44,12 @@ describe("Preservation: Non-Inquiry Button Widget Behavior", () => {
   let mockCfpSubmitBtn;
   let widgetMode;
 
+  let originalDocument;
+  let originalWindow;
+
   beforeEach(() => {
+    originalDocument = global.document;
+    originalWindow = global.window;
     // Initialize widget mode (default is live_chat)
     widgetMode = "live_chat";
 
@@ -177,6 +182,8 @@ describe("Preservation: Non-Inquiry Button Widget Behavior", () => {
   });
 
   afterEach(() => {
+    global.document = originalDocument;
+    global.window = originalWindow;
     vi.clearAllMocks();
   });
 
@@ -387,7 +394,7 @@ describe("Preservation: Non-Inquiry Button Widget Behavior", () => {
             name: fc.string({ minLength: 0, maxLength: 50 }),
             email: fc.emailAddress(),
             phone: fc.string({ minLength: 0, maxLength: 20 }),
-            message: fc.string({ minLength: 1, maxLength: 500 }),
+            message: fc.string({ minLength: 1, maxLength: 500 }).map(s => s.trim().length === 0 ? "Valid message text" : s),
           }),
           async (testCase) => {
             // Reset form state

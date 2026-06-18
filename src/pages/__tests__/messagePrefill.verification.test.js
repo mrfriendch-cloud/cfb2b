@@ -29,9 +29,13 @@ describe("Message Pre-fill Verification: Product Inquiry Form", () => {
   let mockMessageField;
   let mockContactFormPanel;
   let mockChatBubble;
+  let originalDocument;
+  let originalWindow;
   let clickHandlers;
 
   beforeEach(() => {
+    originalDocument = global.document;
+    originalWindow = global.window;
     // Create mock DOM elements
     mockMessageField = {
       value: "",
@@ -112,10 +116,8 @@ describe("Message Pre-fill Verification: Product Inquiry Form", () => {
 
         // Focus first input after panel opens
         if (!isOpen) {
-          setTimeout(() => {
-            const firstInput = cfpPanel.querySelector("input, textarea");
-            if (firstInput) firstInput.focus();
-          }, 100);
+          const firstInput = cfpPanel.querySelector("input, textarea");
+          if (firstInput) firstInput.focus();
         }
       }),
       showNotification: vi.fn(),
@@ -124,10 +126,11 @@ describe("Message Pre-fill Verification: Product Inquiry Form", () => {
     // Set up global document and window
     global.document = mockDocument;
     global.window = mockWindow;
-    global.setTimeout = vi.fn((callback) => callback());
   });
 
   afterEach(() => {
+    global.document = originalDocument;
+    global.window = originalWindow;
     vi.clearAllMocks();
   });
 

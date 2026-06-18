@@ -7,28 +7,123 @@ import { createLayout } from "./layout";
 
 export async function productDetailPage(request, env) {
   const url = new URL(request.url);
-  const productId = url.pathname.split("/").pop();
+  const pathParts = url.pathname.split("/").filter(Boolean);
+  const key = pathParts[1] || "";
+
+  const isNumericId = /^\d+$/.test(key);
+  let product = null;
+
+  const { URLManager } = await import("../seo/url-manager");
+  const urlManager = new URLManager(env);
+
+  if (isNumericId) {
+    const productId = parseInt(key);
+    try {
+      product = await env.DB.prepare("SELECT * FROM products WHERE id = ?")
+        .bind(productId)
+        .first();
+    } catch (error) {
+      console.error("Error loading product by ID for SEO:", error);
+    }
+
+    if (product) {
+      let slug = null;
+      try {
+        const slugRow = await env.DB.prepare("SELECT slug FROM product_slugs WHERE product_id = ?")
+          .bind(productId)
+          .first();
+        if (slugRow && slugRow.slug) {
+          slug = slugRow.slug;
+        } else {
+          const baseSlug = urlManager.generateSlug(product.name);
+          slug = await urlManager.ensureUniqueSlug(baseSlug);
+          await urlManager.saveProductSlug(productId, slug);
+        }
+      } catch (error) {
+        console.error("Error managing slug for ID request:", error);
+      }
+
+      if (slug) {
+        return new Response("", {
+          status: 301,
+          headers: {
+            "Location": `/products/${slug}`,
+          },
+        });
+      }
+    }
+  } else {
+    try {
+      product = await urlManager.getProductBySlug(key);
+    } catch (error) {
+      console.error("Error loading product by slug for SEO:", error);
+    }
+  }
 
   // Load product info from database for SEO
   let pageTitle = "Product Details";
   let metaDescription = "View detailed product information";
+  let seoTags = "";
 
-  try {
-    const product = await env.DB.prepare("SELECT * FROM products WHERE id = ?")
-      .bind(productId)
-      .first();
-    if (product) {
-      pageTitle = product.name;
-      metaDescription =
-        product.description ||
-        product.detailed_description ||
-        `${product.name} - High-quality product`;
-      if (metaDescription.length > 160) {
-        metaDescription = metaDescription.substring(0, 157) + "...";
-      }
+  if (product) {
+    pageTitle = product.name;
+    metaDescription =
+      product.description ||
+      product.detailed_description ||
+      `${product.name} - High-quality product`;
+
+    try {
+      const { MetaTagManager } = await import("../seo/meta-manager");
+      const { SchemaGenerator } = await import("../seo/schema-generator");
+
+      const metaManager = new MetaTagManager(env);
+      const schemaGenerator = new SchemaGenerator(env);
+
+      // Generate meta tags
+      const canonicalUrl = urlManager.generateCanonicalUrl(`/products/${key}`);
+      const metaTagsHtml = metaManager.generateMetaTags({
+        title: product.name,
+        description: metaDescription,
+        canonicalUrl,
+        imageUrl: product.image_url,
+        pageType: "product",
+        product,
+      });
+
+      // Generate schemas
+      const productUrl = urlManager.generateCanonicalUrl(`/products/${key}`);
+      const productSchemaHtml = schemaGenerator.generateProductSchema(product, productUrl);
+
+      const breadcrumbs = [
+        { name: "Home", url: "/" },
+        { name: "Products", url: "/products" },
+        { name: product.name, url: `/products/${key}` },
+      ];
+      const breadcrumbSchemaHtml = schemaGenerator.generateBreadcrumbSchema(breadcrumbs);
+
+      // Parse and combine schemas into a single graph script
+      const parseSchemaHtml = (html) => {
+        if (!html) return null;
+        const match = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+        try {
+          return match ? JSON.parse(match[1].trim()) : null;
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const productSchemaObj = parseSchemaHtml(productSchemaHtml);
+      const breadcrumbSchemaObj = parseSchemaHtml(breadcrumbSchemaHtml);
+
+      const combinedSchemaHtml = schemaGenerator.generateMultiSchema([
+        productSchemaObj,
+        breadcrumbSchemaObj,
+      ]);
+
+      seoTags = `${metaTagsHtml}\n  ${combinedSchemaHtml}`;
+    } catch (seoError) {
+      console.error("Error generating SEO tags:", seoError);
     }
-  } catch (error) {
-    console.error("Error loading product for SEO:", error);
   }
 
   const content = `
@@ -49,7 +144,7 @@ export async function productDetailPage(request, env) {
       crossorigin="anonymous"
     ></script>
     <script>
-      const productId = "${productId}";
+      const productId = "${product ? product.id : key}";
 
       function renderMarkdown(text) {
         if (!text || text.trim() === '') return null;
@@ -268,6 +363,7 @@ export async function productDetailPage(request, env) {
     scripts,
     metaDescription,
     false,
+    seoTags,
   );
 
   return new Response(html, {

@@ -224,10 +224,23 @@ async function createProduct(request, env, corsHeaders) {
       )
       .run();
 
+    const productId = result.meta.last_row_id;
+
+    // Generate and save SEO slug
+    try {
+      const { URLManager } = await import("../../seo/url-manager");
+      const urlManager = new URLManager(env);
+      const baseSlug = urlManager.generateSlug(name);
+      const uniqueSlug = await urlManager.ensureUniqueSlug(baseSlug);
+      await urlManager.saveProductSlug(productId, uniqueSlug);
+    } catch (slugError) {
+      console.error("Error generating SEO slug:", slugError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        data: { id: result.meta.last_row_id },
+        data: { id: productId },
       }),
       {
         status: 201,
@@ -283,6 +296,22 @@ async function updateProduct(request, env, productId, corsHeaders) {
       ? JSON.stringify(gallery_images)
       : "[]";
 
+    // Check if name changed to update SEO slug and create redirects
+    let nameChanged = false;
+    let oldSlug = "";
+    try {
+      const oldProduct = await env.DB.prepare("SELECT name FROM products WHERE id = ?").bind(productId).first();
+      if (oldProduct && oldProduct.name !== name) {
+        nameChanged = true;
+        const slugRow = await env.DB.prepare("SELECT slug FROM product_slugs WHERE product_id = ?").bind(productId).first();
+        if (slugRow && slugRow.slug) {
+          oldSlug = slugRow.slug;
+        }
+      }
+    } catch (e) {
+      console.error("Error checking old product name for slug redirect:", e);
+    }
+
     await env.DB.prepare(
       `UPDATE products SET
         name = ?,
@@ -318,6 +347,24 @@ async function updateProduct(request, env, productId, corsHeaders) {
         productId,
       )
       .run();
+
+    // Generate new slug and create 301 redirects if needed
+    if (nameChanged) {
+      try {
+        const { URLManager } = await import("../../seo/url-manager");
+        const urlManager = new URLManager(env);
+        const baseSlug = urlManager.generateSlug(name);
+        const uniqueSlug = await urlManager.ensureUniqueSlug(baseSlug, productId);
+        
+        if (oldSlug && oldSlug !== uniqueSlug) {
+          await urlManager.createRedirect(`/products/${oldSlug}`, `/products/${uniqueSlug}`);
+        }
+        
+        await urlManager.saveProductSlug(productId, uniqueSlug);
+      } catch (slugError) {
+        console.error("Error updating SEO slug:", slugError);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

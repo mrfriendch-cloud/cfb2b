@@ -18,6 +18,40 @@ export async function aboutPage(env) {
     console.error('Error loading settings for SEO:', error);
   }
 
+  // Generate SEO tags
+  let seoTags = "";
+  try {
+    const { URLManager } = await import("../seo/url-manager");
+    const { MetaTagManager } = await import("../seo/meta-manager");
+    const { SchemaGenerator } = await import("../seo/schema-generator");
+
+    const urlManager = new URLManager(env);
+    const metaManager = new MetaTagManager(env);
+    const schemaGenerator = new SchemaGenerator(env);
+
+    const canonicalUrl = urlManager.generateCanonicalUrl("/about");
+
+    // Meta tags
+    const metaTagsHtml = metaManager.generateMetaTags({
+      title: `About Us - ${siteName}`,
+      description: `Learn more about our journey, values, and commitment to excellence - ${siteName}`,
+      canonicalUrl,
+      imageUrl: null,
+      pageType: "website",
+    });
+
+    // Breadcrumbs schema
+    const breadcrumbs = [
+      { name: "Home", url: "/" },
+      { name: "About Us", url: "/about" },
+    ];
+    const breadcrumbSchemaHtml = schemaGenerator.generateBreadcrumbSchema(breadcrumbs);
+
+    seoTags = `${metaTagsHtml}\n  ${breadcrumbSchemaHtml}`;
+  } catch (seoError) {
+    console.error("Error generating about page SEO tags:", seoError);
+  }
+
   const content = `
     <!-- Page Header -->
     <section class="hero" style="padding: 3rem 2rem;">
@@ -208,7 +242,8 @@ export async function aboutPage(env) {
     content,
     scripts,
     `Learn more about our journey, values, and commitment to excellence - ${siteName}`,
-    false
+    false,
+    seoTags,
   );
 
   return new Response(html, {

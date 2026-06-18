@@ -25,6 +25,60 @@ export async function homePage(env) {
     console.error("Error loading settings for SEO:", error);
   }
 
+  // Generate SEO tags
+  let seoTags = "";
+  try {
+    const { URLManager } = await import("../seo/url-manager");
+    const { MetaTagManager } = await import("../seo/meta-manager");
+    const { SchemaGenerator } = await import("../seo/schema-generator");
+
+    const urlManager = new URLManager(env);
+    const metaManager = new MetaTagManager(env);
+    const schemaGenerator = new SchemaGenerator(env);
+
+    const canonicalUrl = urlManager.generateCanonicalUrl("/");
+
+    // Meta tags
+    const metaTagsHtml = metaManager.generateMetaTags({
+      title: settings.site_name,
+      description: settings.site_description,
+      canonicalUrl,
+      imageUrl: null,
+      pageType: "website",
+    });
+
+    // Organization schema
+    const orgSchemaHtml = schemaGenerator.generateOrganizationSchema(settings);
+
+    // WebSite schema
+    const websiteSchemaObj = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: settings.site_name,
+      url: urlManager.baseUrl,
+    };
+
+    const parseSchemaHtml = (html) => {
+      if (!html) return null;
+      const match = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+      try {
+        return match ? JSON.parse(match[1].trim()) : null;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const orgSchemaObj = parseSchemaHtml(orgSchemaHtml);
+    const combinedSchemaHtml = schemaGenerator.generateMultiSchema([
+      orgSchemaObj,
+      websiteSchemaObj,
+    ].filter(Boolean));
+
+    seoTags = `${metaTagsHtml}\n  ${combinedSchemaHtml}`;
+  } catch (seoError) {
+    console.error("Error generating homepage SEO tags:", seoError);
+  }
+
   const content = `
     <!-- Hero Section -->
     <section class="hero">
@@ -243,6 +297,7 @@ export async function homePage(env) {
     scripts,
     settings.site_description,
     false, // Don't use title suffix for home page
+    seoTags,
   );
 
   return new Response(html, {

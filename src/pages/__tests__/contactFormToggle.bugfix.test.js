@@ -26,7 +26,12 @@ describe("Bug Condition Exploration: Contact Form Panel Toggle", () => {
   let mockContactFormPanel;
   let clickHandlers;
 
+  let originalDocument;
+  let originalWindow;
+
   beforeEach(() => {
+    originalDocument = global.document;
+    originalWindow = global.window;
     // Create mock DOM elements
     mockMessageField = {
       value: "",
@@ -76,11 +81,14 @@ describe("Bug Condition Exploration: Contact Form Panel Toggle", () => {
       // toggleContactFormPanel is intentionally UNDEFINED to simulate the bug condition
     };
 
-    // Set up global document
+    // Set up global document and window
     global.document = mockDocument;
+    global.window = mockWindow;
   });
 
   afterEach(() => {
+    global.document = originalDocument;
+    global.window = originalWindow;
     vi.clearAllMocks();
   });
 
