@@ -60,6 +60,15 @@ async function getSettings(env, corsHeaders) {
       settings.chat_widget_mode = "live_chat";
     }
 
+    // Ensure quotes are always present, defaulting to the 5 famous quotes
+    if (!settings.quote_1) {
+      settings.quote_1 = "The only way to do great work is to love what you do. - Steve Jobs";
+      settings.quote_2 = "Success is not final, failure is not fatal: It is the courage to continue that counts. - Winston Churchill";
+      settings.quote_3 = "Believe you can and you're halfway there. - Theodore Roosevelt";
+      settings.quote_4 = "Strive not to be a success, but rather to be of value. - Albert Einstein";
+      settings.quote_5 = "Do what you can, with what you have, where you are. - Theodore Roosevelt";
+    }
+
     return new Response(JSON.stringify({ success: true, data: settings }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -108,6 +117,11 @@ async function updateSettings(request, env, corsHeaders) {
       facebook: data.facebook || "",
       x: data.x || data.twitter || "",
       twitter: data.x || data.twitter || "",
+      quote_1: data.quote_1 || "",
+      quote_2: data.quote_2 || "",
+      quote_3: data.quote_3 || "",
+      quote_4: data.quote_4 || "",
+      quote_5: data.quote_5 || "",
       updated_at: new Date().toISOString(),
     };
 

@@ -10,6 +10,7 @@ export function createLayout(
   metaDescription = "B2B Product Exhibition - High-quality industrial products and solutions",
   useTitleSuffix = true,
   seoTags = "",
+  settings = null,
 ) {
   const pageTitle = useTitleSuffix
     ? `${title} - B2B Product Exhibition`
@@ -303,6 +304,54 @@ export function createLayout(
       color: white;
     }
 
+    /* Footer quotes */
+    .footer-quotes {
+      min-width: 250px;
+    }
+    .quotes-slider {
+      position: relative;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+    }
+    .quote-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+      font-style: italic;
+      color: #d1d5db;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .quote-item.active {
+      position: relative;
+      opacity: 1;
+      visibility: visible;
+    }
+    .quote-item q {
+      quotes: "“" "”" "‘" "’";
+    }
+    .quote-item q::before {
+      content: open-quote;
+      font-size: 1.5rem;
+      line-height: 0.1;
+      margin-right: 0.25rem;
+      vertical-align: -0.4rem;
+      color: var(--accent-color);
+    }
+    .quote-item q::after {
+      content: close-quote;
+      font-size: 1.5rem;
+      line-height: 0.1;
+      margin-left: 0.1rem;
+      vertical-align: -0.4rem;
+      color: var(--accent-color);
+    }
+
     .footer-bottom {
       text-align: center;
       padding-top: 2rem;
@@ -372,7 +421,7 @@ export function createLayout(
     ${content}
   </main>
 
-  ${createFooter()}
+  ${createFooter(settings)}
 
   <script>
     /**
@@ -407,6 +456,17 @@ export function createLayout(
           link.classList.add('active');
         }
       });
+
+      // Quotes rotation loop (every 5 seconds)
+      const quotes = document.querySelectorAll('.quote-item');
+      if (quotes.length > 0) {
+        let currentIndex = 0;
+        setInterval(() => {
+          quotes[currentIndex].classList.remove('active');
+          currentIndex = (currentIndex + 1) % quotes.length;
+          quotes[currentIndex].classList.add('active');
+        }, 5000);
+      }
     });
 
     // API helper functions
@@ -530,15 +590,16 @@ export function createLayout(
           if (logo && settings.site_name) {
             logo.textContent = settings.site_name;
           }
-
-          // Update footer About Us section
-          const aboutSection = document.querySelector('.footer-section p');
-          if (aboutSection && settings.site_description) {
-            aboutSection.textContent = settings.site_description;
+                       // Update footer quotes slider
+          for (let i = 1; i <= 5; i++) {
+            const quoteEl = document.querySelector(\`.quote-item[data-index="\${i-1}"] q\`);
+            if (quoteEl && settings[\`quote_\${i}\`]) {
+              quoteEl.textContent = settings[\`quote_\${i}\`];
+            }
           }
 
           // Update footer Contact Info
-          const contactItems = document.querySelectorAll('.footer-section:nth-child(3) ul li');
+          const contactItems = document.querySelectorAll('.footer-contact ul li');
           if (contactItems.length >= 3) {
             if (settings.email) contactItems[0].textContent = \`Email: \${settings.email}\`;
             if (settings.phone) contactItems[1].textContent = \`Phone: \${settings.phone}\`;
@@ -546,7 +607,7 @@ export function createLayout(
           }
 
           // Update social media links
-          const socialLinks = document.querySelectorAll('.footer-section:nth-child(4) ul li a');
+          const socialLinks = document.querySelectorAll('.footer-social ul li a');
           if (socialLinks.length >= 3) {
             const youtubeVal = settings.youtube || settings.linkedin;
             if (youtubeVal) {
@@ -1351,15 +1412,18 @@ function createNavbar() {
   </nav>`;
 }
 
-function createFooter() {
+function createFooter(settings = null) {
+  // Fallback default famous quotes
+  const quote_1 = settings?.quote_1 || "The only way to do great work is to love what you do. - Steve Jobs";
+  const quote_2 = settings?.quote_2 || "Success is not final, failure is not fatal: It is the courage to continue that counts. - Winston Churchill";
+  const quote_3 = settings?.quote_3 || "Believe you can and you're halfway there. - Theodore Roosevelt";
+  const quote_4 = settings?.quote_4 || "Strive not to be a success, but rather to be of value. - Albert Einstein";
+  const quote_5 = settings?.quote_5 || "Do what you can, with what you have, where you are. - Theodore Roosevelt";
+
   return `
   <footer class="footer">
     <div class="footer-content">
-      <div class="footer-section">
-        <h3>About Us</h3>
-        <p>Leading provider of high-quality industrial products and solutions worldwide.</p>
-      </div>
-      <div class="footer-section">
+      <div class="footer-section footer-links">
         <h3>Quick Links</h3>
         <ul>
           <li><a href="/">Home</a></li>
@@ -1368,7 +1432,7 @@ function createFooter() {
           <li><a href="/contact">Contact</a></li>
         </ul>
       </div>
-      <div class="footer-section">
+      <div class="footer-section footer-contact">
         <h3>Contact Info</h3>
         <ul>
           <li>Email: info@example.com</li>
@@ -1376,13 +1440,32 @@ function createFooter() {
           <li>Address: 123 Business St, City, Country</li>
         </ul>
       </div>
-      <div class="footer-section">
+      <div class="footer-section footer-social">
         <h3>Follow Us</h3>
         <ul>
           <li><a href="#" target="_blank">YouTube</a></li>
           <li><a href="#" target="_blank">Facebook</a></li>
           <li><a href="#" target="_blank">X</a></li>
         </ul>
+      </div>
+      <div class="footer-section footer-quotes">
+        <div class="quotes-slider">
+          <blockquote class="quote-item active" data-index="0">
+            <q>${quote_1}</q>
+          </blockquote>
+          <blockquote class="quote-item" data-index="1">
+            <q>${quote_2}</q>
+          </blockquote>
+          <blockquote class="quote-item" data-index="2">
+            <q>${quote_3}</q>
+          </blockquote>
+          <blockquote class="quote-item" data-index="3">
+            <q>${quote_4}</q>
+          </blockquote>
+          <blockquote class="quote-item" data-index="4">
+            <q>${quote_5}</q>
+          </blockquote>
+        </div>
       </div>
     </div>
     <div class="footer-bottom">

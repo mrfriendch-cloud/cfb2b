@@ -298,6 +298,7 @@ export async function homePage(env) {
     settings.site_description,
     false, // Don't use title suffix for home page
     seoTags,
+    settings,
   );
 
   return new Response(html, {

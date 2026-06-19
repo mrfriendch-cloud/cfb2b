@@ -122,7 +122,18 @@ export async function adminLoginPage(env) {
     </script>
   `;
 
-  const html = createLayout('Admin Login', content, scripts);
+  // Load settings from KV for footer quotes
+  let settings = null;
+  try {
+    const settingsJson = await env.STATIC_ASSETS.get('website_settings');
+    if (settingsJson) {
+      settings = JSON.parse(settingsJson);
+    }
+  } catch (error) {
+    console.error('Error loading settings for footer:', error);
+  }
+
+  const html = createLayout('Admin Login', content, scripts, undefined, undefined, undefined, settings);
 
   return new Response(html, {
     headers: {

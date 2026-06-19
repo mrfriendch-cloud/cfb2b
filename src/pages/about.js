@@ -8,10 +8,11 @@ import { createLayout } from './layout';
 export async function aboutPage(env) {
   // Load settings from KV for SEO
   let siteName = 'B2B Product Exhibition';
+  let settings = null;
   try {
     const settingsJson = await env.STATIC_ASSETS.get('website_settings');
     if (settingsJson) {
-      const settings = JSON.parse(settingsJson);
+      settings = JSON.parse(settingsJson);
       siteName = settings.site_name || siteName;
     }
   } catch (error) {
@@ -244,6 +245,7 @@ export async function aboutPage(env) {
     `Learn more about our journey, values, and commitment to excellence - ${siteName}`,
     false,
     seoTags,
+    settings,
   );
 
   return new Response(html, {

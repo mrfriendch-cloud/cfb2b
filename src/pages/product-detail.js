@@ -357,6 +357,17 @@ export async function productDetailPage(request, env) {
     </script>
   `;
 
+  // Load settings from KV for footer quotes
+  let settings = null;
+  try {
+    const settingsJson = await env.STATIC_ASSETS.get("website_settings");
+    if (settingsJson) {
+      settings = JSON.parse(settingsJson);
+    }
+  } catch (error) {
+    console.error("Error loading settings for footer:", error);
+  }
+
   const html = createLayout(
     pageTitle,
     content,
@@ -364,6 +375,7 @@ export async function productDetailPage(request, env) {
     metaDescription,
     false,
     seoTags,
+    settings,
   );
 
   return new Response(html, {

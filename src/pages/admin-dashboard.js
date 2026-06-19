@@ -705,6 +705,35 @@ export async function adminDashboard(env) {
               </div>
             </div>
 
+            <h3 style="font-size: 1.1rem; margin: 2rem 0 1rem; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+              Footer Quotes
+            </h3>
+
+            <div class="form-group">
+              <label class="form-label" for="settings-quote-1">Quote 1</label>
+              <input type="text" id="settings-quote-1" name="quote_1" class="form-input" placeholder="Famous quote 1">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settings-quote-2">Quote 2</label>
+              <input type="text" id="settings-quote-2" name="quote_2" class="form-input" placeholder="Famous quote 2">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settings-quote-3">Quote 3</label>
+              <input type="text" id="settings-quote-3" name="quote_3" class="form-input" placeholder="Famous quote 3">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settings-quote-4">Quote 4</label>
+              <input type="text" id="settings-quote-4" name="quote_4" class="form-input" placeholder="Famous quote 4">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="settings-quote-5">Quote 5</label>
+              <input type="text" id="settings-quote-5" name="quote_5" class="form-input" placeholder="Famous quote 5">
+            </div>
+
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
               <button type="submit" id="save-settings-btn" class="btn btn-primary" style="margin-right: 1rem;">Save Settings</button>
               <button type="button" class="btn btn-secondary" onclick="loadSettings()">Reset</button>
@@ -2002,6 +2031,12 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
             // Default to live_chat if value is unrecognized
             document.getElementById('mode-live-chat').checked = true;
           }
+
+          document.getElementById('settings-quote-1').value = settings.quote_1 || '';
+          document.getElementById('settings-quote-2').value = settings.quote_2 || '';
+          document.getElementById('settings-quote-3').value = settings.quote_3 || '';
+          document.getElementById('settings-quote-4').value = settings.quote_4 || '';
+          document.getElementById('settings-quote-5').value = settings.quote_5 || '';
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -2068,6 +2103,11 @@ Date: \${new Date(inquiry.created_at).toLocaleString()}
         facebook: document.getElementById('settings-facebook').value,
         x: document.getElementById('settings-x').value,
         chat_widget_mode: document.querySelector('input[name="chat_widget_mode"]:checked')?.value || 'live_chat',
+        quote_1: document.getElementById('settings-quote-1').value,
+        quote_2: document.getElementById('settings-quote-2').value,
+        quote_3: document.getElementById('settings-quote-3').value,
+        quote_4: document.getElementById('settings-quote-4').value,
+        quote_5: document.getElementById('settings-quote-5').value,
       };
 
       try {
